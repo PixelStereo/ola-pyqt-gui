@@ -53,19 +53,26 @@ class TableModel(QAbstractTableModel):
 
 
     def update(self, dataIn):
-        self.setData(dataIn)
-
-    def setData(self, dataIn):
         for index,value in enumerate(dataIn):
             column = index%self.columns
             row = int(index/self.columns)
             self.datatable[row][column] = value
-        if len(dataIn) < 512:
+            model_index = self.index(row, column)
+            if value != model_index.data:
+                self.setData(model_index, value)
+        if len(dataIn) < 512 and len(dataIn) != 0:
             for index in range(len(dataIn),512):
                 column = index%self.columns
                 row = int(index/self.columns)
                 self.datatable[row][column] = 0
-            self.dataChanged.emit()
+                model_index = self.index(row, column)
+                if model_index.data != 0:
+                    self.setData(model_index, 0)
+
+    def setData(self, index, role=Qt.DisplayRole):
+        if index.row() == 0 and index.column() == 1:
+            self.dataChanged.emit(index, index, [Qt.EditRole])
+            print ['.' for i in range(index.data()/7)]
 
     def rowCount(self, parent=QModelIndex()):
         return self.rows
@@ -79,10 +86,11 @@ class TableModel(QAbstractTableModel):
         index_number = i - 1
         index_number = index_number * j
         index_number = index_number + j
-        if index_number < 513:
+        if index.isValid():
             if role == Qt.DisplayRole:
-                i = index.row()
-                j = index.column()
+                if i == 0 and j == 1:
+                    self.counter += 1
+                    #print self.counter, i, j, self.datatable[i][j]
                 try:
                     return QVariant(self.datatable[i][j])
                 except IndexError:
@@ -97,13 +105,16 @@ class TableModel(QAbstractTableModel):
                     color = QColor(green,255,green)
                     return QBrush(color)
                 except IndexError:
-                    print 'hop'
                     # these cells does not exists
-            else:
-                return QVariant()
+                    return QVariant()
+        else:
+            return QVariant()
 
     def flags(self, index):
-        return Qt.ItemIsEnabled
+        itemFlags = super(TableModel, self).flags(index)
+        if index.column() != 0:
+            return itemFlags | Qt.ItemIsEditable
+        return itemFlags ^ Qt.ItemIsEditable #  First column not editable
 
 class Universe(QGroupBox):
     """This is the universe class"""

@@ -26,6 +26,7 @@ import getopt
 import textwrap
 import sys
 from ola.ClientWrapper import ClientWrapper
+from ola.OlaClient import OLADNotRunningException
 
         
 class MainWindow(QMainWindow):
