@@ -17,17 +17,13 @@ import sys
 from universe import Universe
 
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtCore import Qt, QSignalMapper, QPoint, QSize, QSettings, QFileInfo, QThread
+from PyQt5.QtCore import Qt, QSignalMapper, QPoint, QSize, QSettings, QFileInfo
 from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QMdiArea, \
                             QApplication, QMessageBox, QFileDialog, QWidget
 
-import threading
-import getopt
-import textwrap
-import sys
-from ola.ClientWrapper import ClientWrapper
-from ola.OlaClient import OLADNotRunningException
 
+
+from listen import OLA_client
         
 class MainWindow(QMainWindow):
     """This create the main window of the application"""
@@ -71,46 +67,18 @@ class MainWindow(QMainWindow):
         mytoolbar.setFixedWidth(60)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
 
-        OLA_object = self.OLA_client()
-        self.OLA_object = OLA_object
+        OLA = OLA_client()
+        self.OLA = OLA
         from time import sleep
         sleep(0.5)
-        client = OLA_object.getclient()
+        client = OLA.getclient()
         self.client = client
-
-
-    class OLA_client(QThread):
-        """docstring for OLAUniverseCallback"""
-        def __init__(self):
-            QThread.__init__(self)
-            self.start()
-            self.client = None
-
-        def __del__(self):
-            self.wait()
-
-        def run(self):
-            # OLA
-            try:
-                self.wrapper = ClientWrapper()
-                client = self.wrapper.Client()
-                self.client = client
-                self.wrapper.Run()
-            except OLADNotRunningException:
-                print 'CANNOT CONNECT TO OLA'
-
-        def getclient(self):
-            return self.client
-
-        def stop(self):
-            if self.client:
-                self.wrapper.Stop()
 
 
     def closeEvent(self, scenario):
         """method called when the main window wants to be closed"""
         self.mdiArea.closeAllSubWindows()
-        self.OLA_object.stop()
+        self.OLA.stop()
         if self.mdiArea.currentSubWindow():
             scenario.ignore()
         else:
