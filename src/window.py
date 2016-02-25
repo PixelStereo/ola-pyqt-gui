@@ -21,6 +21,17 @@ from PyQt5.QtCore import Qt, QSignalMapper, QPoint, QSize, QSettings, QFileInfo
 from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QMdiArea, \
                             QApplication, QMessageBox, QFileDialog, QWidget
 
+import threading
+import getopt
+import textwrap
+import sys
+from ola.ClientWrapper import ClientWrapper
+
+        
+
+
+def NewData(data):
+    print data
 
 class MainWindow(QMainWindow):
     """This create the main window of the application"""
@@ -48,7 +59,7 @@ class MainWindow(QMainWindow):
         self.createStatusBar()
         self.updateMenus()
         self.readSettings()
-        self.setWindowTitle("LEKTURE")
+        self.setWindowTitle("OLA GUI")
 
         mytoolbar = QToolBar()
         #self.toolbar = self.addToolBar()
@@ -63,6 +74,34 @@ class MainWindow(QMainWindow):
         mytoolbar.setMovable(False)
         mytoolbar.setFixedWidth(60)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
+
+        client = self.OLA_client()
+        from time import sleep
+        sleep(0.1)
+        client = client.getclient()
+        self.client = client
+
+
+    class OLA_client(threading.Thread):
+        """docstring for OLAUniverseCallback"""
+        def __init__(self):
+            threading.Thread.__init__(self)
+            self.start()
+
+        def run(self):
+            print 'run'
+            # OLA
+            wrapper = ClientWrapper()
+            client = wrapper.Client()
+            self.client = client
+            print 'da' ,self.client
+            wrapper.Run()
+
+
+        def getclient(self):
+            return self.client
+        
+
 
     def closeEvent(self, scenario):
         """method called when the main window wants to be closed"""
@@ -161,6 +200,7 @@ class MainWindow(QMainWindow):
     def createUniverse(self):
         """create a new project"""
         child = Universe()
+        self.client.RegisterUniverse(1, self.client.REGISTER, child.update)
         self.mdiArea.addSubWindow(child)
         self.child = child
         return child

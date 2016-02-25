@@ -10,11 +10,10 @@
 import sys
 import threading
 import subprocess
-from PyQt5.QtCore import Qt, QModelIndex, QFileInfo, QFile, QPoint
-from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QApplication, QMenu, \
-                            QMessageBox, QTableWidgetItem, QGroupBox, QGridLayout
 
-
+from PyQt5.QtCore import Qt, QVariant, QModelIndex, QFileInfo, QPoint, QFile, QAbstractTableModel
+from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QMenu, QGridLayout, QTableView, \
+                            QMessageBox, QTableWidgetItem, QGroupBox, QApplication,QHBoxLayout
 import getopt
 import textwrap
 import sys
@@ -37,7 +36,37 @@ class Document(object):
         pass
 
 
-class Universe(QGroupBox, QModelIndex):
+class TableModel(QAbstractTableModel): 
+    def __init__(self, parent=None, *args): 
+        super(TableModel, self).__init__()
+        self.datatable = [[],[]]
+        self.columns = 12
+        self.rows = (512/self.columns)+1
+
+    def update(self, dataIn):
+        print 'Updating Model'
+        self.datatable = dataIn
+        print 'Datatable : {0}'.format(self.datatable)
+
+    def rowCount(self, parent=QModelIndex()):
+        return self.rows
+
+    def columnCount(self, parent=QModelIndex()):
+        return self.columns
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            i = index.row()
+            j = index.column()
+            #print 'here', self.datatable
+            return '{0}'.format(self.datatable.iget_value(i, j))
+        else:
+            return QVariant()
+
+    def flags(self, index):
+        return Qt.ItemIsEnabled
+
+class Universe(QGroupBox):
     """This is the universe class"""
     sequenceNumber = 1
 
@@ -49,39 +78,47 @@ class Universe(QGroupBox, QModelIndex):
         # I must change all 'document' class reference to 'project' class…
         # so I need to enhance project with modify flags and signals
         self.document = Document('unknown')
-        self.listen(1)
+        self.universe_index = 1
+        """self.universe_group_box = QGroupBox()
+        universe_layout = QHBoxLayout()
+        self.universe_display = QTableView()
+        universe_layout.addWidget(self.universe_display)
+        self.universe_group_box.setLayout(universe_layout)   
+        # Create the main layout
+        self.mainLayout = QGridLayout()
+        # Integrate the layout previously created
+        self.mainLayout.addWidget(self.universe_group_box)
+        # Integrate main layout to the main window
+        self.setLayout(self.mainLayout)
+        # create the model
+        #data = [0,0,0]
+        universe_model = TableModel()
+        self.universe_model = universe_model
+        print 'created model'
+        #universe_model.update(data)
+        self.universe_display.setModel(universe_model)"""
 
-    def listen(self, universe_index):
-        """shortcut to run thread"""
-        self.Listen(self, universe_index)
+    def update(self, data):
+        print data
 
+    def NewData(self, data):
+        print 'print data' ,  data
+        #self.universe_model.update(data)
+        """print len(data)
+        for i in data:
+            dimmer = data.index(i)+1
+            value = i
+            #print dimmer, ':', value
+            cooked = str(dimmer) + ':' + str(value)
+            column = 512%12
+            row = int(512/12)
+            #self.universe_display.setItem(row, column, QTableWidgetItem(cooked))"""
 
-    class Listen(threading.Thread):
-        """Instanciate a thread for Playing a scenario
-        Allow to start twice or more each scenario in the same time"""
-        def __init__(self, solo,universe_index):
-            threading.Thread.__init__(self)
-            self.universe_index = universe_index
-            self.start()
-
-        def run(self):
-            """play a scenario from the beginning
-            play an scenario
-            Started from the first event if an index has not been provided"""
-            universe = self.universe_index
-
-            self.wrapper = ClientWrapper()
-            self.client = self.wrapper.Client()
-            self.client.RegisterUniverse(universe, self.client.REGISTER, self.NewData)
-            self.wrapper.Run()
-
-        def NewData(self, data):
-            print(data)
 
     def newFile(self):
         """create a new project"""
         self.isUntitled = True
-        self.curFile = "project %d" % Universe.sequenceNumber
+        self.curFile = "universe %d" % Universe.sequenceNumber
         Universe.sequenceNumber += 1
         self.setWindowTitle(self.curFile + '[*]')
 

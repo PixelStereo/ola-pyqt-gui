@@ -1,4 +1,4 @@
-import threading#! /usr/bin/env python
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -8,7 +8,6 @@ main script
 import sys
 from window import MainWindow
 from PyQt5.QtWidgets import QApplication
-
 
 if __name__ == "__main__":
     # this is for python2 only
