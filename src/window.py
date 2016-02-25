@@ -17,7 +17,7 @@ import sys
 from universe import Universe
 
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtCore import Qt, QSignalMapper, QPoint, QSize, QSettings, QFileInfo
+from PyQt5.QtCore import Qt, QSignalMapper, QPoint, QSize, QSettings, QFileInfo, QThread
 from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QMdiArea, \
                             QApplication, QMessageBox, QFileDialog, QWidget
 
@@ -28,11 +28,6 @@ import sys
 from ola.ClientWrapper import ClientWrapper
 
         
-
-
-def NewData(data):
-    print data
-
 class MainWindow(QMainWindow):
     """This create the main window of the application"""
     def __init__(self):
@@ -83,12 +78,15 @@ class MainWindow(QMainWindow):
         self.client = client
 
 
-    class OLA_client(threading.Thread):
+    class OLA_client(QThread):
         """docstring for OLAUniverseCallback"""
         def __init__(self):
-            threading.Thread.__init__(self)
+            QThread.__init__(self)
             self.start()
             self.client = None
+
+        def __del__(self):
+            self.wait()
 
         def run(self):
             # OLA
