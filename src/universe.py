@@ -12,7 +12,7 @@ import threading
 import subprocess
 
 from PyQt5.QtGui import QBrush, QColor
-from PyQt5.QtCore import Qt, QVariant, QModelIndex, QFileInfo, QPoint, QFile, QAbstractTableModel
+from PyQt5.QtCore import Qt, QVariant, QModelIndex, QFileInfo, QPoint, QFile, QAbstractTableModel, pyqtSignal
 from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QMenu, QGridLayout, QTableView, \
                             QMessageBox, QTableWidgetItem, QGroupBox, QApplication,QHBoxLayout
 import getopt
@@ -38,6 +38,7 @@ class Document(object):
 
 
 class TableModel(QAbstractTableModel): 
+
     def __init__(self, parent=None, *args): 
         super(TableModel, self).__init__()  
         self.columns = 10
@@ -50,6 +51,7 @@ class TableModel(QAbstractTableModel):
                 delta = delta - 512
                 delta = self.columns - delta
                 self.datatable[row] = self.datatable[row][:delta]
+        dataChanged = pyqtSignal(object)
 
 
     def update(self, dataIn):
@@ -71,7 +73,7 @@ class TableModel(QAbstractTableModel):
 
     def setData(self, index, role=Qt.DisplayRole):
         if index.row() == 0 and index.column() == 1:
-            self.dataChanged.emit(index, index, [Qt.EditRole])
+            self.dataChanged.emit(index, index, [])
             print ['.' for i in range(index.data()/7)]
 
     def rowCount(self, parent=QModelIndex()):
@@ -89,7 +91,7 @@ class TableModel(QAbstractTableModel):
         if index.isValid():
             if role == Qt.DisplayRole:
                 if i == 0 and j == 1:
-                    self.counter += 1
+                    pass
                     #print self.counter, i, j, self.datatable[i][j]
                 try:
                     return QVariant(self.datatable[i][j])
