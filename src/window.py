@@ -75,10 +75,11 @@ class MainWindow(QMainWindow):
         mytoolbar.setFixedWidth(60)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
 
-        client = self.OLA_client()
+        OLA_object = self.OLA_client()
+        self.OLA_object = OLA_object
         from time import sleep
-        sleep(0.1)
-        client = client.getclient()
+        sleep(0.5)
+        client = OLA_object.getclient()
         self.client = client
 
 
@@ -87,25 +88,30 @@ class MainWindow(QMainWindow):
         def __init__(self):
             threading.Thread.__init__(self)
             self.start()
+            self.client = None
 
         def run(self):
-            print 'run'
             # OLA
-            wrapper = ClientWrapper()
-            client = wrapper.Client()
-            self.client = client
-            print 'da' ,self.client
-            wrapper.Run()
-
+            try:
+                self.wrapper = ClientWrapper()
+                client = self.wrapper.Client()
+                self.client = client
+                self.wrapper.Run()
+            except OLADNotRunningException:
+                print 'CANNOT CONNECT TO OLA'
 
         def getclient(self):
             return self.client
-        
+
+        def stop(self):
+            if self.client:
+                self.wrapper.Stop()
 
 
     def closeEvent(self, scenario):
         """method called when the main window wants to be closed"""
         self.mdiArea.closeAllSubWindows()
+        self.OLA_object.stop()
         if self.mdiArea.currentSubWindow():
             scenario.ignore()
         else:
@@ -200,7 +206,8 @@ class MainWindow(QMainWindow):
     def createUniverse(self):
         """create a new project"""
         child = Universe()
-        self.client.RegisterUniverse(1, self.client.REGISTER, child.update)
+        if self.client:
+            self.client.RegisterUniverse(Universe.sequenceNumber, self.client.REGISTER, child.universe_model.update)
         self.mdiArea.addSubWindow(child)
         self.child = child
         return child

@@ -11,6 +11,7 @@ import sys
 import threading
 import subprocess
 
+from PyQt5.QtGui import QBrush, QColor
 from PyQt5.QtCore import Qt, QVariant, QModelIndex, QFileInfo, QPoint, QFile, QAbstractTableModel
 from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QMenu, QGridLayout, QTableView, \
                             QMessageBox, QTableWidgetItem, QGroupBox, QApplication,QHBoxLayout
@@ -38,15 +39,33 @@ class Document(object):
 
 class TableModel(QAbstractTableModel): 
     def __init__(self, parent=None, *args): 
-        super(TableModel, self).__init__()
-        self.datatable = [[],[]]
-        self.columns = 12
+        super(TableModel, self).__init__()  
+        self.columns = 10
         self.rows = (512/self.columns)+1
+        self.datatable = []
+        for row in range(self.rows):
+            self.datatable.append([0 for i in range(self.columns)])
+            if self.rows-1 == row:
+                delta = self.columns * self.rows
+                delta = delta - 512
+                delta = self.columns - delta
+                self.datatable[row] = self.datatable[row][:delta]
+
 
     def update(self, dataIn):
-        print 'Updating Model'
-        self.datatable = dataIn
-        print 'Datatable : {0}'.format(self.datatable)
+        self.setData(dataIn)
+
+    def setData(self, dataIn):
+        for index,value in enumerate(dataIn):
+            column = index%self.columns
+            row = int(index/self.columns)
+            self.datatable[row][column] = value
+        if len(dataIn) < 512:
+            for index in range(len(dataIn),512):
+                column = index%self.columns
+                row = int(index/self.columns)
+                self.datatable[row][column] = 0
+            self.dataChanged.emit()
 
     def rowCount(self, parent=QModelIndex()):
         return self.rows
@@ -55,13 +74,33 @@ class TableModel(QAbstractTableModel):
         return self.columns
 
     def data(self, index, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            i = index.row()
-            j = index.column()
-            #print 'here', self.datatable
-            return '{0}'.format(self.datatable.iget_value(i, j))
-        else:
-            return QVariant()
+        i = index.row()
+        j = index.column()
+        index_number = i - 1
+        index_number = index_number * j
+        index_number = index_number + j
+        if index_number < 513:
+            if role == Qt.DisplayRole:
+                i = index.row()
+                j = index.column()
+                try:
+                    return QVariant(self.datatable[i][j])
+                except IndexError:
+                    print 'hop'
+                    # these cells does not exists
+            elif role == Qt.BackgroundRole:
+                i = index.row()
+                j = index.column()
+                try:
+                    value =  self.datatable[i][j]
+                    green = 255 - value
+                    color = QColor(green,255,green)
+                    return QBrush(color)
+                except IndexError:
+                    print 'hop'
+                    # these cells does not exists
+            else:
+                return QVariant()
 
     def flags(self, index):
         return Qt.ItemIsEnabled
@@ -78,8 +117,7 @@ class Universe(QGroupBox):
         # I must change all 'document' class reference to 'project' class…
         # so I need to enhance project with modify flags and signals
         self.document = Document('unknown')
-        self.universe_index = 1
-        """self.universe_group_box = QGroupBox()
+        self.universe_group_box = QGroupBox()
         universe_layout = QHBoxLayout()
         self.universe_display = QTableView()
         universe_layout.addWidget(self.universe_display)
@@ -94,26 +132,8 @@ class Universe(QGroupBox):
         #data = [0,0,0]
         universe_model = TableModel()
         self.universe_model = universe_model
-        print 'created model'
         #universe_model.update(data)
-        self.universe_display.setModel(universe_model)"""
-
-    def update(self, data):
-        print data
-
-    def NewData(self, data):
-        print 'print data' ,  data
-        #self.universe_model.update(data)
-        """print len(data)
-        for i in data:
-            dimmer = data.index(i)+1
-            value = i
-            #print dimmer, ':', value
-            cooked = str(dimmer) + ':' + str(value)
-            column = 512%12
-            row = int(512/12)
-            #self.universe_display.setItem(row, column, QTableWidgetItem(cooked))"""
-
+        self.universe_display.setModel(universe_model)
 
     def newFile(self):
         """create a new project"""
