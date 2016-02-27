@@ -3,22 +3,16 @@
 
 """Child module hosts a project-related class"""
 
-#from pydular import project
-#from pydular.functions import checkType
-
-
 import sys
 import threading
 import subprocess
-
 from PyQt5.QtGui import QBrush, QColor
 from PyQt5.QtCore import Qt, QVariant, QModelIndex, QFileInfo, QPoint, QFile, QAbstractTableModel, pyqtSignal
-from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QMenu, QGridLayout, QTableView, \
-                            QMessageBox, QTableWidgetItem, QGroupBox, QApplication,QHBoxLayout
+from PyQt5.QtWidgets import QFileDialog, QListWidgetItem, QMenu, QGridLayout, QTableView
+from PyQt5.QtWidgets import QMessageBox, QTableWidgetItem, QGroupBox, QApplication,QHBoxLayout
 import getopt
 import textwrap
 import sys
-from ola.ClientWrapper import ClientWrapper
 
 class Document(object):
     """docstring for Document"""
@@ -38,7 +32,7 @@ class Document(object):
 
 
 class TableModel(QAbstractTableModel): 
-
+    dmx_changed = pyqtSignal()
     def __init__(self, parent=None, *args): 
         super(TableModel, self).__init__()  
         self.columns = 10
@@ -51,7 +45,7 @@ class TableModel(QAbstractTableModel):
                 delta = delta - 512
                 delta = self.columns - delta
                 self.datatable[row] = self.datatable[row][:delta]
-        dataChanged = pyqtSignal(object)
+
 
 
     def update(self, dataIn):
@@ -61,8 +55,13 @@ class TableModel(QAbstractTableModel):
             self.datatable[row][column] = value
             model_index = self.index(row, column)
             if value != model_index.data:
+                # yes : value has changed
                 self.setData(model_index, value)
-        if len(dataIn) < 512 and len(dataIn) != 0:
+                self.dmx_changed.emit()
+            else:
+                pass
+        # if value is 0, OLA does not send the value
+        if len(dataIn) < 512:
             for index in range(len(dataIn),512):
                 column = index%self.columns
                 row = int(index/self.columns)
@@ -70,11 +69,6 @@ class TableModel(QAbstractTableModel):
                 model_index = self.index(row, column)
                 if model_index.data != 0:
                     self.setData(model_index, 0)
-
-    def setData(self, index, role=Qt.DisplayRole):
-        if index.row() == 0 and index.column() == 1:
-            self.dataChanged.emit(index, index, [])
-            print ['.' for i in range(index.data()/7)]
 
     def rowCount(self, parent=QModelIndex()):
         return self.rows
@@ -90,14 +84,11 @@ class TableModel(QAbstractTableModel):
         index_number = index_number + j
         if index.isValid():
             if role == Qt.DisplayRole:
-                if i == 0 and j == 1:
-                    pass
-                    #print self.counter, i, j, self.datatable[i][j]
                 try:
                     return QVariant(self.datatable[i][j])
                 except IndexError:
-                    print 'hop'
                     # these cells does not exists
+                    print(i,j,'is out of datatable')
             elif role == Qt.BackgroundRole:
                 i = index.row()
                 j = index.column()
@@ -109,6 +100,8 @@ class TableModel(QAbstractTableModel):
                 except IndexError:
                     # these cells does not exists
                     return QVariant()
+            else:
+                return QVariant()
         else:
             return QVariant()
 
