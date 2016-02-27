@@ -67,13 +67,10 @@ class MainWindow(QMainWindow):
         mytoolbar.setFixedWidth(60)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
 
-        OLA = OLA_client()
-        self.OLA = OLA
+        self.OLA = OLA_client()
         from time import sleep
         sleep(0.5)
-        client = OLA.getclient()
-        self.client = client
-
+        self.ola_client = self.OLA.getclient()
 
     def closeEvent(self, scenario):
         """method called when the main window wants to be closed"""
@@ -173,8 +170,9 @@ class MainWindow(QMainWindow):
     def createUniverse(self):
         """create a new project"""
         child = Universe()
-        if self.client:
-            self.client.RegisterUniverse(Universe.sequenceNumber, self.client.REGISTER, child.universe_model.update)
+        if self.ola_client:
+            self.ola_client.RegisterUniverse(Universe.sequenceNumber, self.ola_client.REGISTER, child.universe_model.update)
+        child.universe_model.dmx_changed.connect(child.universe_model.layoutChanged.emit)
         self.mdiArea.addSubWindow(child)
         self.child = child
         return child
