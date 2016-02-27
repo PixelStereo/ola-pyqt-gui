@@ -17,7 +17,7 @@ class OLA_client(QThread):
     def __init__(self):
         QThread.__init__(self)
         self.start()
-        self.client = None
+        self._client = None
 
     def __del__(self):
         self.wait()
@@ -27,14 +27,14 @@ class OLA_client(QThread):
         try:
             self.wrapper = ClientWrapper()
             client = self.wrapper.Client()
-            self.client = client
+            self._client = client
             self.wrapper.Run()
         except OLADNotRunningException:
             print 'CANNOT CONNECT TO OLA'
 
     def getclient(self):
-        return self.client
+        return self._client
 
     def stop(self):
-        if self.client:
+        if self._client:
             self.wrapper.Stop()
