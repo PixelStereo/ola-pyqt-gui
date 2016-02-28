@@ -9,60 +9,64 @@ from ola.OlaClient import OLADNotRunningException
 from PyQt5.QtCore import QThread, QAbstractListModel, Qt, QVariant, pyqtSignal
 from PyQt5.QtWidgets import QListView, QApplication, QGroupBox, QVBoxLayout, QPushButton, QSpinBox, QMainWindow, QFrame
 
-universe_1 = [0 for i in range(512)]
-
-
 class OLA(QThread):
     universeChanged = pyqtSignal()
-    """docstring for OLAUniverseCallback"""
+    """Separate Thread that run OLA client"""
     def __init__(self):
         QThread.__init__(self)
-        self._client = None
+        self.client = None
+        # start the thread
         self.start()
 
     def __del__(self):
         self.wait()
 
     def run(self):
-        # OLA
+        """the running thread"""
         try:
             self.wrapper = ClientWrapper()
-            client = self.wrapper.Client()
-            self._client = client
+            self.client = self.wrapper.Client()
             print 'connected to OLA server'
             self.wrapper.Run()
         except OLADNotRunningException:
-            print 'CANNOT CONNECT TO OLA'
-
-    def getclient(self):
-        return self._client
+            print 'cannot connect to OLA'
 
     def stop(self):
-        if self._client:
+        """stop the OLA client wrapper"""
+        if self.client:
             self.wrapper.Stop()
             print 'connection to OLA is closed'
 
-    def update(self, data):
-        for index, value in enumerate(data):
-            universe_1[index] = value
-        self.universeChanged.emit()
-
 
 class UniverseModel(QAbstractListModel):
-    def __init__(self, parent=None):
+    """List Model of a DMX universe (512 values 0/255)"""
+    def __init__(self, parent):
         super(UniverseModel, self).__init__(parent)
+        # fill in the universe with zero (avoid IndexError)
+        self.dmx_list = [0 for i in range(512)]
+        self.parent = parent
 
     def rowCount(self, index):
-        return len(universe_1)
+        """return the size of the list"""
+        return len(self.dmx_list)
 
     def data(self, index, role=Qt.DisplayRole):
+        """return value for an index"""
         index = index.row()
         if role == Qt.DisplayRole:
-            try:
-                return universe_1[index]
-            except IndexError:
-                return QVariant()
+            return self.dmx_list[index]
         return QVariant()
+
+    def new_frame(self, data):
+        """receive the dmx_list when ola sends new data"""
+        for index, value in enumerate(data):
+            self.setData(index, value)
+        # this is send only once for a dmx_list
+        self.parent.ola.universeChanged.emit()
+
+    def setData(self, index, value):
+        """set the value for each new value"""
+        self.dmx_list[index] = value
 
 
 class Universe(QGroupBox):
@@ -70,9 +74,9 @@ class Universe(QGroupBox):
     def __init__(self, parent, ola, universe=1):
         super(Universe, self).__init__()
         self.selector = QSpinBox()
-        self.selector.setRange(1,1)
+        self.selector.setRange(1,2)
         self.view = QListView()
-        self.model = UniverseModel()
+        self.model = UniverseModel(self)
         self.view.setModel(self.model)
         vbox = QVBoxLayout()
         vbox.addWidget(self.selector)
@@ -87,18 +91,22 @@ class Universe(QGroupBox):
 
     def ola_connect(self, new):
         # NEXT :  HOW to unregister Universe??
-        if self.ola.getclient():
+        if self.ola.client:
             if self.old:
                 # unregister the previous universe (self.old)
-                self.ola.getclient().RegisterUniverse(self.old, self.ola.getclient().UNREGISTER, self.ola.update)
+                self.ola.client.RegisterUniverse(self.old, self.ola.client.UNREGISTER, self.model.new_frame)
             # register the selected universe (new)
-            self.ola.getclient().RegisterUniverse(new, self.ola.getclient().REGISTER, self.ola.update)
+            # ask about universe values, in case no new frame is sent
+            self.ola.client.FetchDmx(new, self.refresh)
+            self.ola.client.RegisterUniverse(new, self.ola.client.REGISTER, self.model.new_frame)
             self.ola.universeChanged.connect(self.model.layoutChanged.emit)
             self.old = new
             return True
         else:
             return False
 
+    def refresh(self, RequestStatus, universe, dmx_list):
+        self.model.new_frame(dmx_list)
 
 class MainWindow(QMainWindow):
     """This is the main window"""
@@ -123,8 +131,7 @@ class MainWindow(QMainWindow):
         self.ola = OLA()
         # don't know why, but it seems to be necessary with QThread
         sleep(0.5)
-        self.ola_client = self.ola.getclient()
-        if self.ola_client:
+        if self.ola.client:
             self.ola_switch.setVisible(False)
             # Create the universe layout (view and model)
             self.universe = Universe(self, self.ola, 1)
