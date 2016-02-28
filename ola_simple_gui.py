@@ -7,7 +7,7 @@ from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
 from PyQt5.QtCore import QThread, QAbstractListModel, Qt, QVariant, pyqtSignal
-from PyQt5.QtWidgets import QListView, QApplication, QGroupBox, QVBoxLayout, QPushButton, QSpinBox, QMainWindow, QFrame
+from PyQt5.QtWidgets import QListView, QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QSpinBox, QLabel, QMainWindow, QFrame
 
 class OLA(QThread):
     universeChanged = pyqtSignal()
@@ -73,15 +73,17 @@ class Universe(QGroupBox):
     """docstring for Universe"""
     def __init__(self, parent, ola, universe=1):
         super(Universe, self).__init__()
+        self.universe_label = QLabel('Universe')
         self.selector = QSpinBox()
         self.selector.setRange(1,2)
         self.view = QListView()
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.selector)
-        vbox.addWidget(self.view)
-        self.setLayout(vbox)
+        grid = QGridLayout()
+        grid.addWidget(self.universe_label, 0, 0)
+        grid.addWidget(self.selector, 0, 1)
+        grid.addWidget(self.view,1, 0, 2, 10)
+        self.setLayout(grid)
         parent.vbox.addWidget(self)
         self.ola = ola
         self.old = None
