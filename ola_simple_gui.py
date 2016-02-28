@@ -8,8 +8,9 @@ from time import sleep
 from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
-from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal
+from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex
 from PyQt5.QtWidgets import QTableView, QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QSpinBox, QLabel, QMainWindow, QFrame
+from PyQt5.QtGui import QColor, QBrush, QFont
 
 class OLA(QThread):
     universeChanged = pyqtSignal()
@@ -44,35 +45,93 @@ class UniverseModel(QAbstractTableModel):
     """List Model of a DMX universe (512 values 0/255)"""
     def __init__(self, parent):
         super(UniverseModel, self).__init__(parent)
-        # fill in the universe with zero (avoid IndexError)
-        self.dmx_list = [0 for i in range(512)]
+        self.columns = 33
+        self.rows = (512/self.columns)
+        if int(self.rows)*self.columns < 512:
+            self.rows = self.rows + 1
+        self.dmx_list = []
+        for row in range(self.rows):
+            self.dmx_list.append([0 for i in range(self.columns)])
+            if self.rows-1 == row:
+                delta = self.columns * self.rows
+                delta = delta - 512
+                delta = self.columns - delta
+                self.dmx_list[row] = self.dmx_list[row][:delta]
         self.parent = parent
 
-    def rowCount(self, index):
+    def rowCount(self, index=QModelIndex()):
         """return the size of the list"""
-        return len(self.dmx_list)
+        return self.rows
 
-    def columnCount(self, index):
+    def columnCount(self, index=QModelIndex()):
         """return the number of columns per row"""
-        return 1
+        return self.columns
 
     def data(self, index, role=Qt.DisplayRole):
         """return value for an index"""
-        index = index.row()
-        if role == Qt.DisplayRole:
-            return self.dmx_list[index]
-        return QVariant()
+        rows = index.row()
+        columns = index.column()
+        index_number = rows - 1
+        index_number = index_number * columns
+        index_number = index_number + columns
+        if index.isValid():
+            if role == Qt.DisplayRole:
+                try:
+                    return QVariant(self.dmx_list[rows][columns])
+                except IndexError:
+                    pass
+                    # these cells does not exists
+                    #print(rows,columns,'is out of dmx_list')
+            elif role == Qt.BackgroundRole:
+                try:
+                    value =  self.dmx_list[rows][columns]
+                    green = 255 - value
+                    color = QColor(green,255,green)
+                    return QBrush(color)
+                except IndexError:
+                    # these cells does not exists
+                    return QVariant()
+            elif role == Qt.FontRole:
+                try:
+                    font = QFont()
+                    font.setFamily('Helvetica')
+                    font.setFixedPitch(True)
+                    font.setPointSize(10)
+                    return font
+                except:
+                    return QVariant()
+            else:
+                return QVariant()
+        else:
+            return QVariant()
 
     def new_frame(self, data):
         """receive the dmx_list when ola sends new data"""
-        for index, value in enumerate(data):
-            self.setData(index, value)
+        for index,value in enumerate(data):
+            column = index%self.columnCount()
+            row = int(index/self.columnCount())
+            self.dmx_list[row][column] = value
+            self.model_index = self.index(row, column)
+            if value != self.model_index.data:
+                # yes : value has changed
+                self.setData(self.model_index, value)
+            else:
+                pass
+        # if value is 0, OLA does not send the value
+        if len(data) < 512:
+            for index in range(len(data),512):
+                column = index%self.columns
+                row = int(index/self.columns)
+                self.dmx_list[row][column] = 0
+                self.model_index = self.index(row, column)
+                if self.model_index.data != 0:
+                    self.setData(self.model_index, 0)
         # this is send only once for a dmx_list
         self.parent.ola.universeChanged.emit()
 
-    def setData(self, index, value):
-        """set the value for each new value"""
-        self.dmx_list[index] = value
+    #def setData(self, index, value):
+    #    """set the value for each new value"""
+    #    self.dmx_list[index][column] = value
 
 
 class Universe(QGroupBox):
@@ -85,6 +144,10 @@ class Universe(QGroupBox):
         self.view = QTableView()
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
+        for col in range(self.model.columnCount()):
+            self.view.setColumnWidth(col, 30)
+        for row in range(self.model.rowCount()):
+            self.view.setRowHeight(row, 20)
         grid = QGridLayout()
         grid.addWidget(self.universe_label, 0, 0)
         grid.addWidget(self.selector, 0, 1)
@@ -130,7 +193,8 @@ class MainWindow(QMainWindow):
         # set the layout on the groupbox
         self.setCentralWidget(frame)
         self.setWindowTitle("OLA test GUI")
-        self.resize(480, 320)
+        self.resize(950, 450)
+        self.move(0, 0)
         self.ola = None
 
     def ola_connect(self):
