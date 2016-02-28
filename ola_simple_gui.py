@@ -135,10 +135,6 @@ class UniverseModel(QAbstractTableModel):
         # this is send only once for a dmx_list
         self.parent.ola.universeChanged.emit()
 
-    #def setData(self, index, value):
-    #    """set the value for each new value"""
-    #    self.dmx_list[index][column] = value
-
 
 class Universe(QGroupBox):
     """docstring for Universe"""
