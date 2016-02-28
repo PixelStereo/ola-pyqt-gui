@@ -1,17 +1,15 @@
-from random import randrange
-from time import sleep
-from sys import argv, exit
-from PyQt5.QtCore import QThread, QAbstractListModel, Qt, QVariant, pyqtSignal
-from PyQt5.QtWidgets import QListView, QApplication, QGroupBox, QVBoxLayout, QCheckBox
 
-universe_1 = [0 for i in range(512)]
-
-
+import sys
 import getopt
 import textwrap
-import sys
+from time import sleep
+from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
+from PyQt5.QtCore import QThread, QAbstractListModel, Qt, QVariant, pyqtSignal
+from PyQt5.QtWidgets import QListView, QApplication, QGroupBox, QVBoxLayout, QPushButton, QSpinBox, QMainWindow, QFrame
+
+universe_1 = [0 for i in range(512)]
 
 
 class OLA(QThread):
@@ -31,8 +29,8 @@ class OLA(QThread):
             self.wrapper = ClientWrapper()
             client = self.wrapper.Client()
             self._client = client
+            print 'connected to OLA server'
             self.wrapper.Run()
-            print 'CONNECTED TO OLA'
         except OLADNotRunningException:
             print 'CANNOT CONNECT TO OLA'
 
@@ -42,15 +40,17 @@ class OLA(QThread):
     def stop(self):
         if self._client:
             self.wrapper.Stop()
+            print 'connection to OLA is closed'
 
     def update(self, data):
         for index, value in enumerate(data):
             universe_1[index] = value
         self.universeChanged.emit()
 
-class Universe(QAbstractListModel):
+
+class UniverseModel(QAbstractListModel):
     def __init__(self, parent=None):
-        super(Universe, self).__init__(parent)
+        super(UniverseModel, self).__init__(parent)
 
     def rowCount(self, index):
         return len(universe_1)
@@ -65,43 +65,69 @@ class Universe(QAbstractListModel):
         return QVariant()
 
 
-class Viewer(QGroupBox):
-    def __init__(self):
-        super(Viewer, self).__init__()
-        # create button and list_view
-        self.ola_switch = QCheckBox('ola connection')
-        self.ola_switch.setCheckable(True)
-        self.list_view = QListView()
-        # create a vertical layout and add widgets
+class Universe(QGroupBox):
+    """docstring for Universe"""
+    def __init__(self, parent, ola, universe=1):
+        super(Universe, self).__init__()
+        self.selector = QSpinBox()
+        self.selector.setRange(1,1)
+        self.view = QListView()
+        self.model = UniverseModel()
+        self.view.setModel(self.model)
         vbox = QVBoxLayout()
-        vbox.addWidget(self.ola_switch)
-        vbox.addWidget(self.list_view)
-        # Model and View setup
-        self.model = Universe()
-        self.list_view.setModel(self.model)
-        # meke a process running in parallel 
+        vbox.addWidget(self.selector)
+        vbox.addWidget(self.view)
+        self.setLayout(vbox)
+        parent.vbox.addWidget(self)
+        self.ola = ola
+        print self.connect()
+
+    def connect(self):
+        # NEXT :  HOW to unregister Universe??
+        if self.ola.getclient():
+            self.ola.getclient().RegisterUniverse(1, self.ola.getclient().REGISTER, self.ola.update)
+            self.ola.universeChanged.connect(self.model.layoutChanged.emit)
+            return True
+        else:
+            return False
+
+
+class MainWindow(QMainWindow):
+    """This is the main window"""
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        # create a button to connect to OLA server
+        self.ola_switch = QPushButton('Connect to OLA server')
+        self.ola_switch.released.connect(self.ola_connect)
+        # create a vertical layout and add widgets
+        frame = QFrame()
+        self.vbox = QVBoxLayout(frame)
+        self.vbox.addWidget(self.ola_switch)
+        # set the layout on the groupbox
+        self.setCentralWidget(frame)
+        self.setWindowTitle("OLA test GUI")
+        self.resize(480, 320)
+
+    def ola_connect(self):
+        print 'connecting to OLA server'
+        # meke OLA wrapper running in parallel
         self.ola = OLA()
-        from time import sleep
+        # don't know why, but it seems to be necessary with QThread
         sleep(0.5)
         self.ola_client = self.ola.getclient()
-        self.ola_switch.stateChanged.connect(self.ola_connect)
-        # set the layout on the groupbox
-        vbox.addStretch(1)
-        self.setLayout(vbox)
+        if self.ola_client:
+            self.ola_switch.setVisible(False)
+            # Create the universe layout (view and model)
+            self.universe = Universe(self, self.ola, 1)
 
-    def ola_connect(self, state):
-        if state:
-            if self.ola_client:
-                self.ola_switch.setChecked(True)
-                self.ola_client.RegisterUniverse(1, self.ola_client.REGISTER, self.ola.update)
-                self.ola.universeChanged.connect(self.model.layoutChanged.emit)
-        else:
-            # HOW to unregister Universe??
-            pass
+    def closeEvent(self, event):
+        # why this is happenning twice?
+        self.ola.stop()
+
 
 
 if __name__ == "__main__":
-  app = QApplication(argv)
-  group_widget = Viewer()
-  group_widget.show()
-  exit(app.exec_())
+  app = QApplication(sys.argv)
+  window = MainWindow()
+  window.show()
+  sys.exit(app.exec_())
