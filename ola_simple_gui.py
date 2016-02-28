@@ -45,7 +45,7 @@ class UniverseModel(QAbstractTableModel):
     """List Model of a DMX universe (512 values 0/255)"""
     def __init__(self, parent):
         super(UniverseModel, self).__init__(parent)
-        self.columns = 33
+        self.columns = 32
         self.rows = (512/self.columns)
         if int(self.rows)*self.columns < 512:
             self.rows = self.rows + 1
@@ -193,7 +193,7 @@ class MainWindow(QMainWindow):
         # set the layout on the groupbox
         self.setCentralWidget(frame)
         self.setWindowTitle("OLA test GUI")
-        self.resize(950, 450)
+        self.resize(1050, 450)
         self.move(0, 0)
         self.ola = None
 
