@@ -80,13 +80,21 @@ class Universe(QGroupBox):
         self.setLayout(vbox)
         parent.vbox.addWidget(self)
         self.ola = ola
-        print self.connect()
+        self.old = None
+        self.selector.valueChanged.connect(self.ola_connect)
+        self.selector.setValue(1)
+        self.ola_connect(1)
 
-    def connect(self):
+    def ola_connect(self, new):
         # NEXT :  HOW to unregister Universe??
         if self.ola.getclient():
-            self.ola.getclient().RegisterUniverse(1, self.ola.getclient().REGISTER, self.ola.update)
+            if self.old:
+                # unregister the previous universe (self.old)
+                self.ola.getclient().RegisterUniverse(self.old, self.ola.getclient().UNREGISTER, self.ola.update)
+            # register the selected universe (new)
+            self.ola.getclient().RegisterUniverse(new, self.ola.getclient().REGISTER, self.ola.update)
             self.ola.universeChanged.connect(self.model.layoutChanged.emit)
+            self.old = new
             return True
         else:
             return False
@@ -107,6 +115,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(frame)
         self.setWindowTitle("OLA test GUI")
         self.resize(480, 320)
+        self.ola = None
 
     def ola_connect(self):
         print 'connecting to OLA server'
@@ -122,7 +131,8 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         # why this is happenning twice?
-        self.ola.stop()
+        if self.ola:
+            self.ola.stop()
 
 
 
