@@ -9,7 +9,7 @@ from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
 from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex
-from PyQt5.QtWidgets import QTableView, QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QSpinBox, QLabel, QMainWindow, QFrame
+from PyQt5.QtWidgets import QTableView, QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView
 from PyQt5.QtGui import QColor, QBrush, QFont
 
 class OLA(QThread):
@@ -77,7 +77,12 @@ class UniverseModel(QAbstractTableModel):
         if index.isValid():
             if role == Qt.DisplayRole:
                 try:
-                    return QVariant(self.dmx_list[rows][columns])
+                    value = self.dmx_list[rows][columns]
+                    if value == 255:
+                        value = 'FF'
+                    elif value == 0:
+                        value = ''
+                    return QVariant(value)
                 except IndexError:
                     pass
                     # these cells does not exists
@@ -95,6 +100,7 @@ class UniverseModel(QAbstractTableModel):
                 try:
                     font = QFont()
                     font.setFamily('Helvetica')
+                    #font.setStretch('UltraCondensed')
                     font.setFixedPitch(True)
                     font.setPointSize(10)
                     return font
@@ -144,10 +150,15 @@ class Universe(QGroupBox):
         self.view = QTableView()
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
+        # set up rows and columns
         for col in range(self.model.columnCount()):
             self.view.setColumnWidth(col, 30)
         for row in range(self.model.rowCount()):
             self.view.setRowHeight(row, 20)
+        # set up headers
+        dimmers_view = QHeaderView(Qt.Vertical)
+        self.view.setVerticalHeader(dimmers_view)
+        
         grid = QGridLayout()
         grid.addWidget(self.universe_label, 0, 0)
         grid.addWidget(self.selector, 0, 1)
