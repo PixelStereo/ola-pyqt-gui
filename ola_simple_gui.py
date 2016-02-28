@@ -8,8 +8,8 @@ from time import sleep
 from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
-from PyQt5.QtCore import QThread, QAbstractListModel, Qt, QVariant, pyqtSignal
-from PyQt5.QtWidgets import QListView, QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QSpinBox, QLabel, QMainWindow, QFrame
+from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal
+from PyQt5.QtWidgets import QTableView, QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QSpinBox, QLabel, QMainWindow, QFrame
 
 class OLA(QThread):
     universeChanged = pyqtSignal()
@@ -40,7 +40,7 @@ class OLA(QThread):
             print 'connection to OLA is closed'
 
 
-class UniverseModel(QAbstractListModel):
+class UniverseModel(QAbstractTableModel):
     """List Model of a DMX universe (512 values 0/255)"""
     def __init__(self, parent):
         super(UniverseModel, self).__init__(parent)
@@ -51,6 +51,10 @@ class UniverseModel(QAbstractListModel):
     def rowCount(self, index):
         """return the size of the list"""
         return len(self.dmx_list)
+
+    def columnCount(self, index):
+        """return the number of columns per row"""
+        return 1
 
     def data(self, index, role=Qt.DisplayRole):
         """return value for an index"""
@@ -78,7 +82,7 @@ class Universe(QGroupBox):
         self.universe_label = QLabel('Universe')
         self.selector = QSpinBox()
         self.selector.setRange(1,2)
-        self.view = QListView()
+        self.view = QTableView()
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
         grid = QGridLayout()
