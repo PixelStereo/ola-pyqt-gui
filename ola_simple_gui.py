@@ -133,6 +133,7 @@ class UniverseModel(QAbstractTableModel):
                 if self.model_index.data != 0:
                     self.setData(self.model_index, 0)
         # this is send only once for a dmx_list
+        # This is where the update is send to the GUI
         self.parent.ola.universeChanged.emit()
 
 
