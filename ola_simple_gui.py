@@ -200,7 +200,7 @@ class MainWindow(QMainWindow):
         # set the layout on the groupbox
         self.setCentralWidget(frame)
         self.setWindowTitle("OLA test GUI")
-        self.resize(1050, 450)
+        self.resize(1050, 600)
         self.move(0, 0)
         self.ola = None
 
