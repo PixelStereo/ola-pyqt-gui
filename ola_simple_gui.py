@@ -8,10 +8,10 @@ from time import sleep
 from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
-from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex
-from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, \
-							QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView
-from PyQt5.QtGui import QColor, QBrush, QFont
+from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex, QFileInfo
+from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QToolBar, \
+                            QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView, QAction
+from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
 debug = 0
 
@@ -237,6 +237,8 @@ class MainWindow(QMainWindow):
         # create a button to connect to OLA server
         self.ola_switch = QPushButton('Connect to OLA server')
         self.ola_switch.released.connect(self.ola_connect)
+        self.createLeftToolBar()
+        self.topBar = self.createTopToolBar()
         self.vbox.addWidget(self.ola_switch)
         
 		# set up the window
@@ -254,6 +256,58 @@ class MainWindow(QMainWindow):
     def debug_sw(self, state):
     	global debug
     	debug = state
+
+    def createTopToolBar(self):
+        mytoolbar = QToolBar()
+        mytoolbar.addWidget(self.debug_UI)
+        mytoolbar.addWidget(self.ola_switch)
+        mytoolbar.setMovable(False)
+        mytoolbar.setFixedHeight(30)
+        self.addToolBar(Qt.TopToolBarArea, mytoolbar)
+        return mytoolbar
+    
+    def createLeftToolBar(self):
+        self.createActions()
+        mytoolbar = QToolBar()
+        mytoolbar.addSeparator()
+        mytoolbar.addWidget(QLabel('Universe'))
+        mytoolbar.addAction(self.settingsAct)
+        mytoolbar.addAction(self.displayAct)
+        self.settingsAct.setVisible(True)
+        self.displayAct.setVisible(False)
+        mytoolbar.setMovable(False)
+        mytoolbar.setFixedWidth(70)
+        self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
+
+    def createActions(self):
+        """create all actions"""
+        root = QFileInfo(__file__).absolutePath()
+        self.settingsAct = QAction(QIcon(root + '/images/settings.svg'), "Settings", self,
+                                  statusTip="Open the settings panel",
+                                  triggered=self.openSettingsPanel)
+
+        self.displayAct = QAction(QIcon(root + '/images/display.svg'),"Display", self,
+                                  statusTip="Open the settings panel",
+                                  triggered=self.openDisplayPanel)
+
+    def openSettingsPanel(self):
+        """switch to the settings editor"""
+        if debug:
+            print 'switch to the settings view'
+        self.displayAct.setVisible(True)
+        self.settingsAct.setVisible(False)
+        self.universe.display.view.setVisible(False)
+        self.universe.settings.setVisible(True)
+
+    def openDisplayPanel(self):
+        """switch to the universe display panel"""
+        if debug:
+            print 'switch to the display view'
+        self.displayAct.setVisible(False)
+        self.settingsAct.setVisible(True)
+        self.universe.display.view.setVisible(True)
+        self.universe.settings.setVisible(False)
+
 
     def ola_create(self):
         # meke OLA wrapper running in parallel
