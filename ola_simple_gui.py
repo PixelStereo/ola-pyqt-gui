@@ -121,8 +121,8 @@ class UniverseModel(QAbstractTableModel):
     def new_frame(self, data):
         """receive the dmx_list when ola sends new data"""
         if debug:
-            print 'new frame :', len(data), data
-        if data:
+        	print 'new frame :', len(data), data
+        if data != None:
             for index,value in enumerate(data):
                 column = index%self.columnCount()
                 row = int(index/self.columnCount())
@@ -157,15 +157,16 @@ class Universe(QGroupBox):
         self.view = QTableView()
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
+        # set up headers
+        dimmers_view = QHeaderView(Qt.Vertical)
+        self.view.setVerticalHeader(dimmers_view)
+        index_view = QHeaderView(Qt.Horizontal)
+        self.view.setHorizontalHeader(index_view)
         # set up rows and columns
         for col in range(self.model.columnCount()):
             self.view.setColumnWidth(col, 30)
         for row in range(self.model.rowCount()):
-            self.view.setRowHeight(row, 20)
-        # set up headers
-        dimmers_view = QHeaderView(Qt.Vertical)
-        self.view.setVerticalHeader(dimmers_view)
-        
+            self.view.setRowHeight(row, 20)        
         grid = QGridLayout()
         grid.addWidget(self.universe_label, 0, 0)
         grid.addWidget(self.selector, 0, 1)
@@ -178,7 +179,7 @@ class Universe(QGroupBox):
         self.selector.setValue(1)
         self.ola_connect(1)
         if debug:
-            print 'new universe has been created'
+            print 'universe', universe, 'has been created'
 
     def ola_connect(self, new):
         if self.ola.client:
@@ -192,9 +193,9 @@ class Universe(QGroupBox):
 	            # ask about universe values, in case no new frame is sent
 	            if debug:
 	                print 'connect universe :', new
-	            self.ola.client.FetchDmx(new, self.refresh)
 	            self.ola.client.RegisterUniverse(new, self.ola.client.REGISTER, self.model.new_frame)
 	            self.ola.universeChanged.connect(self.model.layoutChanged.emit)
+	            self.ola.client.FetchDmx(new, self.refresh)
 	            self.old = new
 	            return True
 	        else:
@@ -208,6 +209,8 @@ class Universe(QGroupBox):
             return False
 
     def refresh(self, RequestStatus, universe, dmx_list):
+    	if debug:
+    		print 'refresh universe', universe
         self.model.new_frame(dmx_list)
 
 class MainWindow(QMainWindow):
@@ -221,14 +224,16 @@ class MainWindow(QMainWindow):
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
         self.vbox.addWidget(self.ola_switch)
-        # set the layout on the groupbox
         self.setCentralWidget(frame)
+		# set up the window
         self.setWindowTitle("OLA test GUI")
         self.resize(1050, 600)
         self.move(0, 0)
+        # initialize ola to be sure it exists
         self.ola = None
         if debug:
             print 'main window has been created'
+        self.ola_create()
 
     def ola_create(self):
         if debug:
