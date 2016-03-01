@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, Q
                             QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView, QAction
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
-debug = 0
+debug = 1
 
 class OLA(QThread):
     universeChanged = pyqtSignal()
@@ -157,12 +157,14 @@ class Universe(QGroupBox):
         self.ola = ola
 		# intialize variable used in ola_connect method
         self.old = None
-        self.universe_label = QLabel('Universe')
-        self.selector = QSpinBox()
-        self.selector.setRange(1,2)
         self.view = QTableView()
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
+        grid = QGridLayout()
+        grid.addWidget(self.view,1, 0, 2, 10)
+        self.settings = QLabel('Some Widgets to patch universes inputs & outputs')
+        self.settings.setVisible(False)
+        grid.addWidget(self.settings)
         # set up headers
         v_headers = QHeaderView(Qt.Vertical)
         self.view.setVerticalHeader(v_headers)
@@ -176,19 +178,17 @@ class Universe(QGroupBox):
             self.view.setColumnWidth(col, 28)
         for row in range(self.model.rowCount()):
             self.view.setRowHeight(row, 20)
-        grid = QGridLayout()
-        grid.addWidget(self.universe_label, 0, 0)
-        grid.addWidget(self.selector, 0, 1)
-        grid.addWidget(self.view,1, 0, 2, 10)
         self.setLayout(grid)
         parent.vbox.addWidget(self)
-        self.selector.valueChanged.connect(self.ola_connect)
-        self.selector.setValue(1)
-        self.ola_connect(1)
+        parent.selector.valueChanged.connect(self.ola_connect)
+        parent.selector.setValue(universe)
+        self.ola_connect(universe)
         if debug:
             print 'universe', universe, 'has been created'
 
     def ola_connect(self, new):
+        if debug:
+            print 'ola connect' 
         if self.ola.client:
         	if new != self.old:
 	            if self.old:
@@ -220,6 +220,7 @@ class Universe(QGroupBox):
     		print 'refresh universe', universe
         self.model.new_frame(dmx_list)
 
+
 class MainWindow(QMainWindow):
     """This is the main window"""
     def __init__(self):
@@ -229,48 +230,38 @@ class MainWindow(QMainWindow):
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
         self.setCentralWidget(frame)
-
-        # temporary debug UI toggle
-        self.debug_UI = QCheckBox('Print Debug')
-        self.debug_UI.stateChanged.connect(self.debug_sw)
-        self.vbox.addWidget(self.debug_UI)
         # create a button to connect to OLA server
-        self.ola_switch = QPushButton('Connect to OLA server')
-        self.ola_switch.released.connect(self.ola_connect)
         self.createLeftToolBar()
-        self.topBar = self.createTopToolBar()
-        self.vbox.addWidget(self.ola_switch)
-        
 		# set up the window
         self.setWindowTitle("OLA test GUI")
-        self.resize(990, 480)
+        self.resize(1046, 400)
         self.move(0, 0)
         # initialize ola to be sure it exists
         self.ola = None
         if debug:
             print 'main window has been created'
         self.ola_create()
-
         self.ola_connect()
 
     def debug_sw(self, state):
     	global debug
     	debug = state
-
-    def createTopToolBar(self):
-        mytoolbar = QToolBar()
-        mytoolbar.addWidget(self.debug_UI)
-        mytoolbar.addWidget(self.ola_switch)
-        mytoolbar.setMovable(False)
-        mytoolbar.setFixedHeight(30)
-        self.addToolBar(Qt.TopToolBarArea, mytoolbar)
-        return mytoolbar
     
     def createLeftToolBar(self):
         self.createActions()
         mytoolbar = QToolBar()
+        # temporary debug UI toggle
+        debug_UI = QCheckBox('Debug')
+        global debug
+        debug_UI.setChecked(debug)
+        debug_UI.stateChanged.connect(self.debug_sw)
+        mytoolbar.addWidget(debug_UI)
         mytoolbar.addSeparator()
         mytoolbar.addWidget(QLabel('Universe'))
+        self.selector = QSpinBox()
+        mytoolbar.addWidget(self.selector)
+        # need to fetch universes to set range
+        self.selector.setRange(1,2)
         mytoolbar.addAction(self.settingsAct)
         mytoolbar.addAction(self.displayAct)
         self.settingsAct.setVisible(True)
@@ -296,7 +287,7 @@ class MainWindow(QMainWindow):
             print 'switch to the settings view'
         self.displayAct.setVisible(True)
         self.settingsAct.setVisible(False)
-        self.universe.display.view.setVisible(False)
+        self.universe.view.setVisible(False)
         self.universe.settings.setVisible(True)
 
     def openDisplayPanel(self):
@@ -305,9 +296,8 @@ class MainWindow(QMainWindow):
             print 'switch to the display view'
         self.displayAct.setVisible(False)
         self.settingsAct.setVisible(True)
-        self.universe.display.view.setVisible(True)
+        self.universe.view.setVisible(True)
         self.universe.settings.setVisible(False)
-
 
     def ola_create(self):
         # meke OLA wrapper running in parallel
@@ -319,7 +309,6 @@ class MainWindow(QMainWindow):
         # don't know why, but it seems to be necessary with QThread
         sleep(0.1)
         if self.ola.client:
-            self.ola_switch.setVisible(False)
             # Create the universe layout (view and model)
             self.universe = Universe(self, self.ola, 1)
 
@@ -327,7 +316,6 @@ class MainWindow(QMainWindow):
         # why this is happenning twice?
         if self.ola:
             self.ola.stop()
-
 
 
 if __name__ == "__main__":
