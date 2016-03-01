@@ -12,6 +12,8 @@ from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal,
 from PyQt5.QtWidgets import QTableView, QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView
 from PyQt5.QtGui import QColor, QBrush, QFont
 
+debug = 1
+
 class OLA(QThread):
     universeChanged = pyqtSignal()
     """Separate Thread that run OLA client"""
