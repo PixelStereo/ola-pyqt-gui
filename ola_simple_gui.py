@@ -9,10 +9,11 @@ from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
 from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex
-from PyQt5.QtWidgets import QTableView, QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView
+from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, \
+							QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView
 from PyQt5.QtGui import QColor, QBrush, QFont
 
-debug = 1
+debug = 0
 
 class OLA(QThread):
     universeChanged = pyqtSignal()
@@ -121,7 +122,8 @@ class UniverseModel(QAbstractTableModel):
     def new_frame(self, data):
         """receive the dmx_list when ola sends new data"""
         if debug:
-        	print 'new frame :', len(data), data
+        	print 'new frame received :', len(data), data
+        # if data: does not work because the data list can be empty when fetching DMX
         if data != None:
             for index,value in enumerate(data):
                 column = index%self.columnCount()
@@ -141,6 +143,7 @@ class UniverseModel(QAbstractTableModel):
                     self.dmx_list[row][column] = 0
                     self.model_index = self.index(row, column)
                     if self.model_index.data != 0:
+                    	print 'setData', self.model_index.data
                         self.setData(self.model_index, 0)
             # this is send only once for a dmx_list
             # This is where the update is send to the GUI
@@ -151,6 +154,10 @@ class Universe(QGroupBox):
     """docstring for Universe"""
     def __init__(self, parent, ola, universe=1):
         super(Universe, self).__init__()
+        # make it available for the whole instance
+        self.ola = ola
+		# intialize variable used in ola_connect method
+        self.old = None
         self.universe_label = QLabel('Universe')
         self.selector = QSpinBox()
         self.selector.setRange(1,2)
@@ -158,23 +165,24 @@ class Universe(QGroupBox):
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
         # set up headers
-        dimmers_view = QHeaderView(Qt.Vertical)
-        self.view.setVerticalHeader(dimmers_view)
-        index_view = QHeaderView(Qt.Horizontal)
-        self.view.setHorizontalHeader(index_view)
+        v_headers = QHeaderView(Qt.Vertical)
+        self.view.setVerticalHeader(v_headers)
+        h_headers = QHeaderView(Qt.Horizontal)
+        self.view.setHorizontalHeader(h_headers)
+        if debug : 
+        	print 'how many lines : ', v_headers.count()
+        	print 'how many columns : ', h_headers.count()
         # set up rows and columns
         for col in range(self.model.columnCount()):
-            self.view.setColumnWidth(col, 30)
+            self.view.setColumnWidth(col, 28)
         for row in range(self.model.rowCount()):
-            self.view.setRowHeight(row, 20)        
+            self.view.setRowHeight(row, 20)
         grid = QGridLayout()
         grid.addWidget(self.universe_label, 0, 0)
         grid.addWidget(self.selector, 0, 1)
         grid.addWidget(self.view,1, 0, 2, 10)
         self.setLayout(grid)
         parent.vbox.addWidget(self)
-        self.ola = ola
-        self.old = None
         self.selector.valueChanged.connect(self.ola_connect)
         self.selector.setValue(1)
         self.ola_connect(1)
@@ -217,23 +225,36 @@ class MainWindow(QMainWindow):
     """This is the main window"""
     def __init__(self):
         super(MainWindow, self).__init__()
+
+		# create a vertical layout in a frame to add widgets
+		# this might be done in a QToolbar
+        frame = QFrame()
+        self.vbox = QVBoxLayout(frame)
+        self.setCentralWidget(frame)
+
+        # temporary debug UI toggle
+        self.debug_UI = QCheckBox('Print Debug')
+        self.debug_UI.stateChanged.connect(self.debug_sw)
+        self.vbox.addWidget(self.debug_UI)
         # create a button to connect to OLA server
         self.ola_switch = QPushButton('Connect to OLA server')
         self.ola_switch.released.connect(self.ola_create)
-        # create a vertical layout and add widgets
-        frame = QFrame()
-        self.vbox = QVBoxLayout(frame)
         self.vbox.addWidget(self.ola_switch)
-        self.setCentralWidget(frame)
+        
 		# set up the window
         self.setWindowTitle("OLA test GUI")
-        self.resize(1050, 600)
+        self.resize(990, 480)
         self.move(0, 0)
         # initialize ola to be sure it exists
         self.ola = None
         if debug:
             print 'main window has been created'
         self.ola_create()
+
+
+    def debug_sw(self, state):
+    	global debug
+    	debug = state
 
     def ola_create(self):
         if debug:
