@@ -20,6 +20,8 @@ class OLA(QThread):
         self.client = None
         # start the thread
         self.start()
+        if debug:
+            print 'create a OLA client'
 
     def __del__(self):
         self.wait()
@@ -29,16 +31,19 @@ class OLA(QThread):
         try:
             self.wrapper = ClientWrapper()
             self.client = self.wrapper.Client()
-            print 'connected to OLA server'
+            if debug:
+                print 'connected to OLA server'
             self.wrapper.Run()
         except OLADNotRunningException:
-            print 'cannot connect to OLA'
+            if debug:
+                print 'cannot connect to OLA'
 
     def stop(self):
         """stop the OLA client wrapper"""
         if self.client:
             self.wrapper.Stop()
-            print 'connection to OLA is closed'
+            if debug:
+                print 'connection to OLA is closed'
 
 
 class UniverseModel(QAbstractTableModel):
@@ -84,9 +89,9 @@ class UniverseModel(QAbstractTableModel):
                         value = ''
                     return QVariant(value)
                 except IndexError:
-                    pass
-                    # these cells does not exists
-                    #print(rows,columns,'is out of dmx_list')
+                    if debug:
+                        # these cells does not exists
+                        print(rows,columns,'is out of dmx_list')
             elif role == Qt.BackgroundRole:
                 try:
                     value =  self.dmx_list[rows][columns]
@@ -113,28 +118,31 @@ class UniverseModel(QAbstractTableModel):
 
     def new_frame(self, data):
         """receive the dmx_list when ola sends new data"""
-        for index,value in enumerate(data):
-            column = index%self.columnCount()
-            row = int(index/self.columnCount())
-            self.dmx_list[row][column] = value
-            self.model_index = self.index(row, column)
-            if value != self.model_index.data:
-                # yes : value has changed
-                self.setData(self.model_index, value)
-            else:
-                pass
-        # if value is 0, OLA does not send the value
-        if len(data) < 512:
-            for index in range(len(data),512):
-                column = index%self.columns
-                row = int(index/self.columns)
-                self.dmx_list[row][column] = 0
+        if debug:
+            print 'new frame :', len(data), data
+        if data:
+            for index,value in enumerate(data):
+                column = index%self.columnCount()
+                row = int(index/self.columnCount())
+                self.dmx_list[row][column] = value
                 self.model_index = self.index(row, column)
-                if self.model_index.data != 0:
-                    self.setData(self.model_index, 0)
-        # this is send only once for a dmx_list
-        # This is where the update is send to the GUI
-        self.parent.ola.universeChanged.emit()
+                if value != self.model_index.data:
+                    # yes : value has changed
+                    self.setData(self.model_index, value)
+                else:
+                    pass
+            # if value is 0, OLA does not send the value
+            if len(data) < 512:
+                for index in range(len(data),512):
+                    column = index%self.columns
+                    row = int(index/self.columns)
+                    self.dmx_list[row][column] = 0
+                    self.model_index = self.index(row, column)
+                    if self.model_index.data != 0:
+                        self.setData(self.model_index, 0)
+            # this is send only once for a dmx_list
+            # This is where the update is send to the GUI
+            self.parent.ola.universeChanged.emit()
 
 
 class Universe(QGroupBox):
@@ -167,15 +175,20 @@ class Universe(QGroupBox):
         self.selector.valueChanged.connect(self.ola_connect)
         self.selector.setValue(1)
         self.ola_connect(1)
+        if debug:
+            print 'new universe has been created'
 
     def ola_connect(self, new):
-        # NEXT :  HOW to unregister Universe??
         if self.ola.client:
             if self.old:
                 # unregister the previous universe (self.old)
+                if debug:
+                    print 'disconnect universe :', old
                 self.ola.client.RegisterUniverse(self.old, self.ola.client.UNREGISTER, self.model.new_frame)
             # register the selected universe (new)
             # ask about universe values, in case no new frame is sent
+            if debug:
+                print 'connect universe :', new
             self.ola.client.FetchDmx(new, self.refresh)
             self.ola.client.RegisterUniverse(new, self.ola.client.REGISTER, self.model.new_frame)
             self.ola.universeChanged.connect(self.model.layoutChanged.emit)
@@ -204,9 +217,12 @@ class MainWindow(QMainWindow):
         self.resize(1050, 600)
         self.move(0, 0)
         self.ola = None
+        if debug:
+            print 'main window has been created'
 
     def ola_connect(self):
-        print 'connecting to OLA server'
+        if debug:
+            print 'connecting to OLA server'
         # meke OLA wrapper running in parallel
         self.ola = OLA()
         # don't know why, but it seems to be necessary with QThread
