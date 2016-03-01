@@ -182,20 +182,28 @@ class Universe(QGroupBox):
 
     def ola_connect(self, new):
         if self.ola.client:
-            if self.old:
-                # unregister the previous universe (self.old)
-                if debug:
-                    print 'disconnect universe :', old
-                self.ola.client.RegisterUniverse(self.old, self.ola.client.UNREGISTER, self.model.new_frame)
-            # register the selected universe (new)
-            # ask about universe values, in case no new frame is sent
-            if debug:
-                print 'connect universe :', new
-            self.ola.client.FetchDmx(new, self.refresh)
-            self.ola.client.RegisterUniverse(new, self.ola.client.REGISTER, self.model.new_frame)
-            self.ola.universeChanged.connect(self.model.layoutChanged.emit)
-            self.old = new
-            return True
+        	if new != self.old:
+	            if self.old:
+	                # unregister the previous universe (self.old)
+	                if debug:
+	                    print 'disconnect universe :', self.old
+	                self.ola.client.RegisterUniverse(self.old, self.ola.client.UNREGISTER, self.model.new_frame)
+	            # register the selected universe (new)
+	            # ask about universe values, in case no new frame is sent
+	            if debug:
+	                print 'connect universe :', new
+	            self.ola.client.FetchDmx(new, self.refresh)
+	            self.ola.client.RegisterUniverse(new, self.ola.client.REGISTER, self.model.new_frame)
+	            self.ola.universeChanged.connect(self.model.layoutChanged.emit)
+	            self.old = new
+	            return True
+	        else:
+	        	# ola wants to connect again to the universe it's already binding to
+	        	if debug:
+	        		# update dmx values
+	        		self.ola.client.FetchDmx(new, self.refresh)
+	        		print 'universe already connected'
+	        	return False
         else:
             return False
 
@@ -208,7 +216,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         # create a button to connect to OLA server
         self.ola_switch = QPushButton('Connect to OLA server')
-        self.ola_switch.released.connect(self.ola_connect)
+        self.ola_switch.released.connect(self.ola_create)
         # create a vertical layout and add widgets
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
@@ -222,7 +230,7 @@ class MainWindow(QMainWindow):
         if debug:
             print 'main window has been created'
 
-    def ola_connect(self):
+    def ola_create(self):
         if debug:
             print 'connecting to OLA server'
         # meke OLA wrapper running in parallel
