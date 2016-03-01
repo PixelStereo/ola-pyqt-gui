@@ -143,7 +143,6 @@ class UniverseModel(QAbstractTableModel):
                     self.dmx_list[row][column] = 0
                     self.model_index = self.index(row, column)
                     if self.model_index.data != 0:
-                    	print 'setData', self.model_index.data
                         self.setData(self.model_index, 0)
             # this is send only once for a dmx_list
             # This is where the update is send to the GUI
@@ -225,7 +224,6 @@ class MainWindow(QMainWindow):
     """This is the main window"""
     def __init__(self):
         super(MainWindow, self).__init__()
-
 		# create a vertical layout in a frame to add widgets
 		# this might be done in a QToolbar
         frame = QFrame()
@@ -238,7 +236,7 @@ class MainWindow(QMainWindow):
         self.vbox.addWidget(self.debug_UI)
         # create a button to connect to OLA server
         self.ola_switch = QPushButton('Connect to OLA server')
-        self.ola_switch.released.connect(self.ola_create)
+        self.ola_switch.released.connect(self.ola_connect)
         self.vbox.addWidget(self.ola_switch)
         
 		# set up the window
@@ -251,18 +249,21 @@ class MainWindow(QMainWindow):
             print 'main window has been created'
         self.ola_create()
 
+        self.ola_connect()
 
     def debug_sw(self, state):
     	global debug
     	debug = state
 
     def ola_create(self):
-        if debug:
-            print 'connecting to OLA server'
         # meke OLA wrapper running in parallel
         self.ola = OLA()
+
+    def ola_connect(self):
+        if debug:
+            print 'connecting to OLA server'
         # don't know why, but it seems to be necessary with QThread
-        sleep(0.5)
+        sleep(0.1)
         if self.ola.client:
             self.ola_switch.setVisible(False)
             # Create the universe layout (view and model)
@@ -276,7 +277,7 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-  app = QApplication(sys.argv)
-  window = MainWindow()
-  window.show()
-  sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
