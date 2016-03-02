@@ -234,7 +234,7 @@ class MainWindow(QMainWindow):
         self.createLeftToolBar()
 		# set up the window
         self.setWindowTitle("OLA test GUI")
-        self.resize(1046, 400)
+        self.resize(1051, 400)
         self.move(0, 0)
         # initialize ola to be sure it exists
         self.ola = None
@@ -267,7 +267,7 @@ class MainWindow(QMainWindow):
         self.settingsAct.setVisible(True)
         self.displayAct.setVisible(False)
         mytoolbar.setMovable(False)
-        mytoolbar.setFixedWidth(70)
+        mytoolbar.setFixedWidth(75)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
 
     def createActions(self):
