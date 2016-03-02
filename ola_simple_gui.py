@@ -258,7 +258,9 @@ class MainWindow(QMainWindow):
         mytoolbar.addWidget(debug_UI)
         mytoolbar.addSeparator()
         mytoolbar.addWidget(QLabel('Universe'))
-        self.selector = QMenu('Universe')
+        self.selector = QPushButton()
+        self.selectorMenu = QMenu('Universe')
+        self.selector.setMenu(self.selectorMenu)
         mytoolbar.addWidget(self.selector)
         mytoolbar.addAction(self.settingsAct)
         mytoolbar.addAction(self.displayAct)
@@ -314,7 +316,7 @@ class MainWindow(QMainWindow):
     def universes(self, request, universes):
         # need to fetch universes to set range
         for universe in universes:
-            self.selector.addAction(universe.name)
+            self.selector.addAction(QAction(str(universe.name), self))
 
     def closeEvent(self, event):
         # why this is happenning twice?
