@@ -9,7 +9,7 @@ from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
 from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex, QFileInfo
-from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QToolBar, \
+from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QToolBar, QMenu, \
                             QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView, QAction
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
@@ -180,8 +180,8 @@ class Universe(QGroupBox):
             self.view.setRowHeight(row, 20)
         self.setLayout(grid)
         parent.vbox.addWidget(self)
-        parent.selector.valueChanged.connect(self.ola_connect)
-        parent.selector.setValue(universe)
+        #parent.selector.valueChanged.connect(self.ola_connect)
+        #parent.selector.setValue(universe)
         self.ola_connect(universe)
         if debug:
             print 'universe', universe, 'has been created'
@@ -258,10 +258,8 @@ class MainWindow(QMainWindow):
         mytoolbar.addWidget(debug_UI)
         mytoolbar.addSeparator()
         mytoolbar.addWidget(QLabel('Universe'))
-        self.selector = QSpinBox()
+        self.selector = QMenu('Universe')
         mytoolbar.addWidget(self.selector)
-        # need to fetch universes to set range
-        self.selector.setRange(1,2)
         mytoolbar.addAction(self.settingsAct)
         mytoolbar.addAction(self.displayAct)
         self.settingsAct.setVisible(True)
@@ -309,8 +307,14 @@ class MainWindow(QMainWindow):
         # don't know why, but it seems to be necessary with QThread
         sleep(0.1)
         if self.ola.client:
+            self.ola.client.FetchUniverses(self.universes)
             # Create the universe layout (view and model)
             self.universe = Universe(self, self.ola, 1)
+
+    def universes(self, request, universes):
+        # need to fetch universes to set range
+        for universe in universes:
+            self.selector.addAction(universe.name)
 
     def closeEvent(self, event):
         # why this is happenning twice?
