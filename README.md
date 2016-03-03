@@ -5,8 +5,13 @@ This is a little application to configure the wonderful OLA framework. ([open-li
 ##Roadmap
 * ~~Display DMX values~~
 * ~~Select a uiverse to display~~
-* Create and patch universes
-* embed OLA
+* Display Name and Merge Mode
+* Create and patch universes/devices
+* Send values to Universe if no input device
+* Create an editor for ola_trigger
+* Embed conf files
+* Embed OLA
+* Implement RDM
 
 ##Credits
 © Pixel Stereo
