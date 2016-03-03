@@ -1,6 +1,6 @@
 #Ola Pyqt Gui
 
-This is a little application to configure OLA ([open-lighting-architecture](https://www.openlighting.org/ola/))
+This is a little application to configure the wonderful OLA framework. ([open-lighting-architecture](https://www.openlighting.org/ola/))
 
 ##Roadmap
 * ~~Display DMX values~~
