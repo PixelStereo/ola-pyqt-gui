@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, Q
                             QPushButton, QToolBar, QMenu, QFrame, QHeaderView, QAction, QRadioButton
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
-debug = 1
+debug = 0
 
 class OLA(QThread):
     universeChanged = pyqtSignal()
@@ -26,10 +26,17 @@ class OLA(QThread):
         # start the thread
         self.start()
         if debug:
-            print 'create a OLA client'
+            print 'try to connecto to OLA'
 
     def __del__(self):
         self.wait()
+
+    def universes_refresh(self):
+        self.client.FetchUniverses(self.universes_request)
+
+    def universes_request(self, request, universes):
+        self.universes_list = universes
+        self.universesList.emit()
 
     def run(self):
         """the running thread"""
@@ -153,10 +160,10 @@ class UniverseModel(QAbstractTableModel):
 
 class Universe(QGroupBox):
     """docstring for Universe"""
-    def __init__(self, parent, ola, universe=1):
+    def __init__(self, parent):
         super(Universe, self).__init__()
         # make it available for the whole instance
-        self.ola = ola
+        self.ola = parent.ola
 		# intialize variable used in ola_connect method
         self.old = None
         self.view = QTableView()
@@ -182,11 +189,6 @@ class Universe(QGroupBox):
             self.view.setRowHeight(row, 20)
         self.setLayout(grid)
         parent.vbox.addWidget(self)
-        #parent.selector.valueChanged.connect(self.ola_connect)
-        #parent.selector.setValue(universe)
-        self.ola_connect(universe)
-        if debug:
-            print 'universe', universe, 'has been created'
 
     def ola_connect(self, new):
         if self.ola.client:
@@ -208,8 +210,6 @@ class Universe(QGroupBox):
 	        else:
 	        	# ola wants to connect again to the universe it's already binding to
 	        	if debug:
-	        		# update dmx values
-	        		#self.ola.client.FetchDmx(new, self.refresh)
 	        		print 'universe already connected'
 	        	return False
         else:
@@ -226,39 +226,28 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 		# create a vertical layout in a frame to add widgets
-		# this might be done in a QToolbar
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
         self.setCentralWidget(frame)
-        # create a button to connect to OLA server
-        self.createLeftToolBar()
+        # create a ToolBar
+        self.createToolBar()
 		# set up the window
-        self.setWindowTitle("OLA test GUI")
-        self.resize(1051, 400)
+        self.setWindowTitle("OLA GUI")
+        self.setFixedWidth(1086)
+        self.setFixedHeight(400)
         self.move(0, 0)
         # initialize ola to be sure it exists
         self.ola = None
         if debug:
             print 'main window has been created'
-        self.universes_list = None
+            print 'make a ola_connection request'
         self.ola_create()
-        sleep(0.1)
-        if self.ola.client:
-            self.ola.universesList.connect(self.update_universes_list)
-            self.ola.client.FetchUniverses(self.universes)
-        sleep(0.5)
-        if self.universes_list:
-            # if there is a universe, connect to the first one
-            #universe_id = self.selectorLayout.itemAt(0).widget().text()
-            #universe_id = int(universe_id)
-            # Create the universe layout (view and model)
-            self.universe = Universe(self, self.ola, self.universes_list[0].id)
 
     def debug_sw(self, state):
     	global debug
     	debug = state
     
-    def createLeftToolBar(self):
+    def createToolBar(self):
         self.createActions()
         mytoolbar = QToolBar()
         # temporary debug UI toggle
@@ -267,6 +256,9 @@ class MainWindow(QMainWindow):
         debug_UI.setChecked(debug)
         debug_UI.stateChanged.connect(self.debug_sw)
         mytoolbar.addWidget(debug_UI)
+        self.ola_connection = QCheckBox('OLA')
+        self.ola_connection.released.connect(self.ola_create)
+        mytoolbar.addWidget(self.ola_connection)
         mytoolbar.addSeparator()
         self.selectorMenu = QGroupBox()
         self.selectorLayout = QVBoxLayout()
@@ -274,7 +266,8 @@ class MainWindow(QMainWindow):
         new_universe = QPushButton('new universe')
         new_universe.released.connect(self.create_universe)
         mytoolbar.addWidget(new_universe)
-        mytoolbar.addAction(self.settingsAct)
+        # I MUST MOVE SETTINGS PANEL FOR SELECTED UNIVERS IN tHE UNIVERSE GROUPBOX
+        #mytoolbar.addAction(self.settingsAct)
         mytoolbar.addAction(self.displayAct)
         mytoolbar.addWidget(self.selectorMenu)
         self.settingsAct.setVisible(True)
@@ -318,25 +311,44 @@ class MainWindow(QMainWindow):
         print 'TODO : create a new universe'
 
     def ola_create(self):
-        # meke OLA wrapper running in parallel
-        self.ola = OLA()
+        # check if there is not already a OLA client
+        if not self.ola:
+            # create a OLA client
+            ola = OLA()
+            sleep(0.5)
+            if ola.client:
+                self.ola = ola
+                self.ola_connection.setEnabled(False)
+                # connect signal from OLA client to function here to fillin universes access
+                self.ola.universesList.connect(self.update_universes_list)
+                # please update universes list
+                self.ola.universes_refresh()
+                self.ola_connection.setChecked(True)
+                # create the panel to display universe
+                self.universe_group()
+            else:
+                self.ola_connection.setChecked(False)
 
     def update_universes_list(self):
-         for universe in self.universes_list:
-            button = QRadioButton(str(universe.id))
-            self.selectorLayout.addWidget(button)
-            button.released.connect(self.choose_universe)
+        if self.ola.universes_list:
+            if debug:
+                print 'there is', len(self.ola.universes_list), 'universes in OLA'
+            for universe in self.ola.universes_list:
+                button = QRadioButton(str(universe.id))
+                self.selectorLayout.addWidget(button)
+                button.released.connect(self.choose_universe)
+        else:
+            if debug:
+                print 'there is no universes in OLA'
+
+    def universe_group(self):
+        self.universe = Universe(self)
 
     def choose_universe(self, data=None):
         for i in range(self.selectorLayout.count()):
             if self.selectorLayout.itemAt(i).widget().isChecked():
                 universe_id = self.selectorLayout.itemAt(i).widget().text()
                 self.universe.ola_connect(int(universe_id))
-
-    def universes(self, request, universes):
-        # need to fetch universes to set range
-        self.universes_list = universes
-        self.ola.universesList.emit()
 
     def closeEvent(self, event):
         # why this is happenning twice?
