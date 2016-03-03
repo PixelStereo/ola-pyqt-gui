@@ -8,13 +8,14 @@ from time import sleep
 from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
-from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex, QFileInfo
+from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex, QFileInfo, QCoreApplication
 from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QVBoxLayout, \
                             QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, \
                             QPushButton, QToolBar, QMenu, QFrame, QHeaderView, QAction, QRadioButton
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
-debug = 0
+debug = 1
+
 
 class OLA(QThread):
     universeChanged = pyqtSignal()
@@ -59,7 +60,7 @@ class OLA(QThread):
 
 
 class UniverseModel(QAbstractTableModel):
-    """List Model of a DMX universe (512 values 0/255)"""
+    """Table Model of a DMX universe (512 values 0/255)"""
     def __init__(self, parent):
         super(UniverseModel, self).__init__(parent)
         self.columns = 32
@@ -225,6 +226,8 @@ class MainWindow(QMainWindow):
     """This is the main window"""
     def __init__(self):
         super(MainWindow, self).__init__()
+        # initialize to None just to know if a universe has ever been seleted
+        self.universe = None
 		# create a vertical layout in a frame to add widgets
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
@@ -239,7 +242,7 @@ class MainWindow(QMainWindow):
         # initialize ola to be sure it exists
         self.ola = None
         if debug:
-            print 'main window has been created'
+            print 'main window created'
             print 'make a ola_connection request'
         self.ola_create()
 
@@ -259,17 +262,9 @@ class MainWindow(QMainWindow):
         self.ola_connection = QCheckBox('OLA')
         self.ola_connection.released.connect(self.ola_create)
         mytoolbar.addWidget(self.ola_connection)
-        mytoolbar.addSeparator()
-        self.selectorMenu = QGroupBox()
-        self.selectorLayout = QVBoxLayout()
-        self.selectorMenu.setLayout(self.selectorLayout)
-        new_universe = QPushButton('new universe')
-        new_universe.released.connect(self.create_universe)
-        mytoolbar.addWidget(new_universe)
         # I MUST MOVE SETTINGS PANEL FOR SELECTED UNIVERS IN tHE UNIVERSE GROUPBOX
         #mytoolbar.addAction(self.settingsAct)
         mytoolbar.addAction(self.displayAct)
-        mytoolbar.addWidget(self.selectorMenu)
         self.settingsAct.setVisible(True)
         self.displayAct.setVisible(False)
         mytoolbar.setMovable(False)
@@ -324,30 +319,62 @@ class MainWindow(QMainWindow):
                 # please update universes list
                 self.ola.universes_refresh()
                 self.ola_connection.setChecked(True)
+                # create a button to add a new universe
+                new_universe = QPushButton('new universe')
+                new_universe.released.connect(self.create_universe)
+                self.toolbar.addWidget(new_universe)
+                refresh_universes = QPushButton('refresh list')
+                refresh_universes.released.connect(self.ola.universes_refresh)
+                self.toolbar.addWidget(refresh_universes)
                 # create the panel to display universe
-                self.universe_group()
+                self.universe_panel()
             else:
                 self.ola_connection.setChecked(False)
 
+    def universe_panel(self):
+        self.toolbar.addSeparator()
+        self.selectorMenu = QGroupBox()
+        self.selectorLayout = QVBoxLayout()
+        self.selectorMenu.setLayout(self.selectorLayout)
+        self.toolbar.addWidget(self.selectorMenu)
+
+    def clean_universes_list(self):
+        """clean the universes list"""
+        for i in range(self.selectorLayout.count()):
+            item = self.selectorLayout.itemAt(i)
+            if item:
+                widget = item.widget()
+                self.selectorLayout.removeWidget(widget)
+                widget.deleteLater()
+
     def update_universes_list(self):
+        """Update the list of the existing universes in OLA"""
+        if debug:
+            print 'update universes list'
+        # I don't know why, but I need to call the clean several times to be sure it's done????
+        if self.selectorLayout.count():
+            self.clean_universes_list()
+        if self.selectorLayout.count():
+            self.clean_universes_list()
+        if self.selectorLayout.count():
+            self.clean_universes_list()
         if self.ola.universes_list:
             if debug:
-                print 'there is', len(self.ola.universes_list), 'universes in OLA'
+                print len(self.ola.universes_list), 'universes found in OLA'
             for universe in self.ola.universes_list:
                 button = QRadioButton(str(universe.id))
                 self.selectorLayout.addWidget(button)
                 button.released.connect(self.choose_universe)
         else:
             if debug:
-                print 'there is no universes in OLA'
-
-    def universe_group(self):
-        self.universe = Universe(self)
+                print 'there is no universes in OLA'  
 
     def choose_universe(self, data=None):
         for i in range(self.selectorLayout.count()):
             if self.selectorLayout.itemAt(i).widget().isChecked():
                 universe_id = self.selectorLayout.itemAt(i).widget().text()
+                if not self.universe:
+                    self.universe = Universe(self)
                 self.universe.ola_connect(int(universe_id))
 
     def closeEvent(self, event):
