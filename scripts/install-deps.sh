@@ -20,7 +20,7 @@ case "$TRAVIS_OS_NAME" in
    ;;
   osx)
     echo "START OSX"
-    sudo brew install pkgconfig cppunit protobuf-cpp libmicrohttpd libusb py27-protobuf
+    brew install pkgconfig cppunit protobuf-cpp libmicrohttpd libusb py27-protobuf
     echo "END OSX"
   ;;
 esac
