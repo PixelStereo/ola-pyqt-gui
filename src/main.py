@@ -9,14 +9,16 @@ from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
 from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex, QFileInfo
-from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QPushButton, QToolBar, QMenu, \
-                            QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QFrame, QHeaderView, QAction
+from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QVBoxLayout, \
+                            QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, \
+                            QPushButton, QToolBar, QMenu, QFrame, QHeaderView, QAction, QRadioButton
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
 debug = 1
 
 class OLA(QThread):
     universeChanged = pyqtSignal()
+    universesList = pyqtSignal()
     """Separate Thread that run OLA client"""
     def __init__(self):
         QThread.__init__(self)
@@ -187,8 +189,6 @@ class Universe(QGroupBox):
             print 'universe', universe, 'has been created'
 
     def ola_connect(self, new):
-        if debug:
-            print 'ola connect' 
         if self.ola.client:
         	if new != self.old:
 	            if self.old:
@@ -209,7 +209,7 @@ class Universe(QGroupBox):
 	        	# ola wants to connect again to the universe it's already binding to
 	        	if debug:
 	        		# update dmx values
-	        		self.ola.client.FetchDmx(new, self.refresh)
+	        		#self.ola.client.FetchDmx(new, self.refresh)
 	        		print 'universe already connected'
 	        	return False
         else:
@@ -240,8 +240,19 @@ class MainWindow(QMainWindow):
         self.ola = None
         if debug:
             print 'main window has been created'
+        self.universes_list = None
         self.ola_create()
-        self.ola_connect()
+        sleep(0.1)
+        if self.ola.client:
+            self.ola.universesList.connect(self.update_universes_list)
+            self.ola.client.FetchUniverses(self.universes)
+        sleep(0.5)
+        if self.universes_list:
+            # if there is a universe, connect to the first one
+            #universe_id = self.selectorLayout.itemAt(0).widget().text()
+            #universe_id = int(universe_id)
+            # Create the universe layout (view and model)
+            self.universe = Universe(self, self.ola, self.universes_list[0].id)
 
     def debug_sw(self, state):
     	global debug
@@ -257,28 +268,32 @@ class MainWindow(QMainWindow):
         debug_UI.stateChanged.connect(self.debug_sw)
         mytoolbar.addWidget(debug_UI)
         mytoolbar.addSeparator()
-        mytoolbar.addWidget(QLabel('Universe'))
-        self.selector = QPushButton()
-        self.selectorMenu = QMenu('Universe')
-        self.selector.setMenu(self.selectorMenu)
-        mytoolbar.addWidget(self.selector)
+        self.selectorMenu = QGroupBox()
+        self.selectorLayout = QVBoxLayout()
+        self.selectorMenu.setLayout(self.selectorLayout)
+        new_universe = QPushButton('new universe')
+        new_universe.released.connect(self.create_universe)
+        mytoolbar.addWidget(new_universe)
         mytoolbar.addAction(self.settingsAct)
         mytoolbar.addAction(self.displayAct)
+        mytoolbar.addWidget(self.selectorMenu)
         self.settingsAct.setVisible(True)
         self.displayAct.setVisible(False)
         mytoolbar.setMovable(False)
-        mytoolbar.setFixedWidth(75)
+        mytoolbar.setFixedWidth(110)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
+        self.toolbar = mytoolbar
 
     def createActions(self):
         """create all actions"""
         root = QFileInfo(__file__).absolutePath()
+
         self.settingsAct = QAction(QIcon(root + '/images/settings.svg'), "Settings", self,
-                                  statusTip="Open the settings panel",
+                                  statusTip="Settings panel for the selected universe",
                                   triggered=self.openSettingsPanel)
 
         self.displayAct = QAction(QIcon(root + '/images/display.svg'),"Display", self,
-                                  statusTip="Open the settings panel",
+                                  statusTip="Display value for the selected universe",
                                   triggered=self.openDisplayPanel)
 
     def openSettingsPanel(self):
@@ -299,24 +314,29 @@ class MainWindow(QMainWindow):
         self.universe.view.setVisible(True)
         self.universe.settings.setVisible(False)
 
+    def create_universe(self):
+        print 'TODO : create a new universe'
+
     def ola_create(self):
         # meke OLA wrapper running in parallel
         self.ola = OLA()
 
-    def ola_connect(self):
-        if debug:
-            print 'connecting to OLA server'
-        # don't know why, but it seems to be necessary with QThread
-        sleep(0.1)
-        if self.ola.client:
-            self.ola.client.FetchUniverses(self.universes)
-            # Create the universe layout (view and model)
-            self.universe = Universe(self, self.ola, 1)
+    def update_universes_list(self):
+         for universe in self.universes_list:
+            button = QRadioButton(str(universe.id))
+            self.selectorLayout.addWidget(button)
+            button.released.connect(self.choose_universe)
+
+    def choose_universe(self, data=None):
+        for i in range(self.selectorLayout.count()):
+            if self.selectorLayout.itemAt(i).widget().isChecked():
+                universe_id = self.selectorLayout.itemAt(i).widget().text()
+                self.universe.ola_connect(int(universe_id))
 
     def universes(self, request, universes):
         # need to fetch universes to set range
-        for universe in universes:
-            self.selector.addAction(QAction(str(universe.name), self))
+        self.universes_list = universes
+        self.ola.universesList.emit()
 
     def closeEvent(self, event):
         # why this is happenning twice?
