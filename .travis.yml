@@ -17,4 +17,4 @@ deploy:
   on:
     tags: true
     all_branches: true
-    repo: PixelStereo/ol-pyqt-gui
+    repo: PixelStereo/ola-pyqt-gui
