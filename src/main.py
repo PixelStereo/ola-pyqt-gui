@@ -10,7 +10,7 @@ from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
 from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex, QFileInfo, QCoreApplication
 from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QVBoxLayout, \
-                            QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, \
+                            QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QLineEdit, \
                             QPushButton, QToolBar, QMenu, QFrame, QHeaderView, QAction, QRadioButton
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
@@ -167,15 +167,19 @@ class Universe(QGroupBox):
         self.ola = parent.ola
 		# intialize variable used in ola_connect method
         self.old = None
+        # Create 
+        self.id_label = QLabel('Universe ID')
+        self.id = QSpinBox()
+        self.name_label = QLabel('Name')
+        self.name = QLineEdit()
+        self.name.setFixedWidth(200)
+        self.merge_mode_label = QLabel('Merge Mode')
+        self.merge_mode = QCheckBox()
+        # Create the view to display values
         self.view = QTableView()
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
-        grid = QGridLayout()
-        grid.addWidget(self.view,1, 0, 2, 10)
-        self.settings = QLabel('Some Widgets to patch universes inputs & outputs')
-        self.settings.setVisible(False)
-        grid.addWidget(self.settings)
-        # set up headers
+        # set up headers of the QTableView
         v_headers = QHeaderView(Qt.Vertical)
         self.view.setVerticalHeader(v_headers)
         h_headers = QHeaderView(Qt.Horizontal)
@@ -188,33 +192,55 @@ class Universe(QGroupBox):
             self.view.setColumnWidth(col, 28)
         for row in range(self.model.rowCount()):
             self.view.setRowHeight(row, 20)
+        # Add the previous UI stuffs to a layout
+        grid = QGridLayout()
+        grid.addWidget(self.id_label, 0, 0, 1, 1)
+        grid.addWidget(self.name_label, 0, 1, 1, 1)
+        grid.addWidget(self.merge_mode_label, 0, 2, 1, 1)
+        grid.addWidget(self.id, 1, 0, 1, 1)
+        grid.addWidget(self.name, 1, 1, 1, 1)
+        grid.addWidget(self.merge_mode, 1, 2, 1, 1)
+        grid.addWidget(self.view,2, 0, 15, 10)
+        # Create the settings Layout
+        self.settings = QLabel('Some Widgets to patch universes inputs & outputs')
+        self.settings.setVisible(False)
+        grid.addWidget(self.settings)
         self.setLayout(grid)
         parent.vbox.addWidget(self)
 
-    def connect(self, new):
+    def connect(self, universe):
         if self.ola.client:
-        	if new != self.old:
-	            if self.old:
-	                # unregister the previous universe (self.old)
-	                if debug:
-	                    print 'disconnect universe :', self.old
-	                self.ola.client.RegisterUniverse(self.old, self.ola.client.UNREGISTER, self.model.new_frame)
-	            # register the selected universe (new)
-	            # ask about universe values, in case no new frame is sent
-	            if debug:
-	                print 'connect universe :', new
-	            self.ola.client.RegisterUniverse(new, self.ola.client.REGISTER, self.model.new_frame)
-	            self.ola.universeChanged.connect(self.model.layoutChanged.emit)
-	            self.ola.client.FetchDmx(new, self.refresh)
-	            self.old = new
-	            return True
-	        else:
-	        	# ola wants to connect again to the universe it's already binding to
-	        	if debug:
+            if universe.id != self.old:
+                if self.old:
+                    # unregister the previous universe (self.old)
+                    if debug:
+                        print 'disconnect universe :', self.old
+                    self.ola.client.RegisterUniverse(self.old, self.ola.client.UNREGISTER, self.model.new_frame)
+                # register the selected universe (new)
+                # ask about universe values, in case no new frame is sent
+                if debug:
+                    print 'connect universe :', universe.id
+                self.ola.client.RegisterUniverse(universe.id, self.ola.client.REGISTER, self.model.new_frame)
+                self.ola.universeChanged.connect(self.model.layoutChanged.emit)
+                self.ola.client.FetchDmx(universe.id, self.refresh)
+                self.display_properties(universe)
+                self.old = universe.id
+                return True
+            else:
+                # ola wants to connect again to the universe it's already binding to
+                if debug:
 	        		print 'universe already connected'
-	        	return False
+                return False
         else:
             return False
+
+    def display_properties(self, universe):
+        self.id.setValue(universe.id)
+        self.name.setText(universe.name)
+        if universe.merge_mode == 1:
+            self.merge_mode.setChecked(True)
+        else:
+            self.merge_mode.setChecked(False)
 
     def refresh(self, RequestStatus, universe, dmx_list):
     	if debug:
@@ -239,7 +265,7 @@ class MainWindow(QMainWindow):
 		# set up the window
         self.setWindowTitle("OLA GUI")
         self.setFixedWidth(1086)
-        self.setFixedHeight(400)
+        self.setFixedHeight(488)
         self.move(0, 0)
         # initialize ola to be sure it exists
         self.ola = None
@@ -403,7 +429,7 @@ class MainWindow(QMainWindow):
                         self.universe_selected = universe
                         if debug:
                             print 'selected universe :', universe
-                self.universe.connect(self.universe_selected.id)
+                self.universe.connect(self.universe_selected)
 
     def closeEvent(self, event):
         # why this is happenning twice?
