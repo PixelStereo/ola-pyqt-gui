@@ -191,7 +191,7 @@ class Universe(QGroupBox):
         self.setLayout(grid)
         parent.vbox.addWidget(self)
 
-    def ola_connect(self, new):
+    def connect(self, new):
         if self.ola.client:
         	if new != self.old:
 	            if self.old:
@@ -232,6 +232,8 @@ class MainWindow(QMainWindow):
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
         self.setCentralWidget(frame)
+        # create a status bar
+        self.status("Ready", 999999)
         # create a ToolBar
         self.createToolBar()
 		# set up the window
@@ -244,12 +246,18 @@ class MainWindow(QMainWindow):
         if debug:
             print 'main window created'
             print 'make a ola_connection request'
+        # When creating the app, there is no universe selected
+        self.universe_selected = None
+        # Try tp create OLA client
         self.ola_create()
 
     def debug_sw(self, state):
     	global debug
     	debug = state
-    
+
+    def status(self, message, timeout=2000):
+        self.statusBar().showMessage(message, timeout)
+
     def createToolBar(self):
         self.createActions()
         mytoolbar = QToolBar()
@@ -314,6 +322,7 @@ class MainWindow(QMainWindow):
             if ola.client:
                 self.ola = ola
                 self.ola_connection.setEnabled(False)
+                self.status("connected to OLA")
                 # connect signal from OLA client to function here to fillin universes access
                 self.ola.universesList.connect(self.update_universes_list)
                 # please update universes list
@@ -329,6 +338,7 @@ class MainWindow(QMainWindow):
                 # create the panel to display universe
                 self.universe_panel()
             else:
+                self.status("can't connect to OLA. Is it running?", 999999)
                 self.ola_connection.setChecked(False)
 
     def universe_panel(self):
@@ -348,7 +358,10 @@ class MainWindow(QMainWindow):
                 widget.deleteLater()
 
     def update_universes_list(self):
-        """Update the list of the existing universes in OLA"""
+        """
+        Update the list of the existing universes in OLA
+        Create a button per universe to be able to select it
+        """
         if debug:
             print 'update universes list'
         # I don't know why, but I need to call the clean several times to be sure it's done????
@@ -362,6 +375,7 @@ class MainWindow(QMainWindow):
             if debug:
                 print len(self.ola.universes_list), 'universes found in OLA'
             for universe in self.ola.universes_list:
+                # PLEASE CREATE A QLISTVIEW ATTACHED TO A QABSTRACTLISTMODEL FOR UNIVERSES
                 button = QRadioButton(str(universe.id))
                 self.selectorLayout.addWidget(button)
                 button.released.connect(self.choose_universe)
@@ -370,12 +384,26 @@ class MainWindow(QMainWindow):
                 print 'there is no universes in OLA'  
 
     def choose_universe(self, data=None):
+        """
+        Select a universe to display its values or settings
+        The function is called when a universe button is released
+        """
         for i in range(self.selectorLayout.count()):
+            # please make a double/triple check to be sure a universe is selected
             if self.selectorLayout.itemAt(i).widget().isChecked():
+                # A universe is selected
                 universe_id = self.selectorLayout.itemAt(i).widget().text()
                 if not self.universe:
+                    # there is no universe interface created. Please do it
+                    # MAYBE WE CAN DO THIS WHEN CREATING THE MAIN WINDOW?
                     self.universe = Universe(self)
-                self.universe.ola_connect(int(universe_id))
+                # Fill in the universe_selected variable
+                for universe in self.ola.universes_list:
+                    if universe.id == int(universe_id):
+                        self.universe_selected = universe
+                        if debug:
+                            print 'selected universe :', universe
+                self.universe.connect(self.universe_selected.id)
 
     def closeEvent(self, event):
         # why this is happenning twice?
