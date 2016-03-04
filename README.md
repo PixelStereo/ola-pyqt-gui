@@ -5,7 +5,7 @@ This is a little application to configure the wonderful OLA framework. ([open-li
 ##Roadmap
 * ~~Display DMX values~~
 * ~~Select a uiverse to display~~
-* Display Name and Merge Mode
+* ~~Display Name and Merge Mode~~
 * Create and patch universes/devices
 * Send values to Universe if no input device
 * Create an editor for ola_trigger
