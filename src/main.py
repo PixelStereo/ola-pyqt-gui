@@ -93,11 +93,17 @@ class UniversesModel(QAbstractListModel):
     def update_universes_list(self, RequestStatus, universes):
         """receive the dmx_list when ola sends new data"""
         if RequestStatus.Succeeded():
-            if universes:
-                self.universes_list = []
-                for index, universe in enumerate(universes):
-                    self.universes_list.append(universe)
-                self.parent.ola.universesList.emit()
+            self.universes_list = list(universes)
+            if debug:
+                if len(universes) == 0:
+                    print 'no universe found'
+                elif len(universes) == 1:
+                    print 'only one universe found'
+                elif len(universes) > 1:
+                    print len(universes), 'universes found'
+                else:
+                    print len(universes), 'ERROR CODE 001'
+            self.parent.ola.universesList.emit()
 
 
 class UniverseModel(QAbstractTableModel):
