@@ -19,9 +19,13 @@ debug = 1
 
 
 class OLA(QThread):
+    """
+    Separate Thread that run OLA client
+    """
+    # signal that there is a new frame for the selected universe
     universeChanged = pyqtSignal()
+    # signal that there is a new universes_list to display
     universesList = pyqtSignal()
-    """Separate Thread that run OLA client"""
     def __init__(self):
         QThread.__init__(self)
         self.client = None
@@ -31,14 +35,16 @@ class OLA(QThread):
             print 'try to connecto to OLA'
 
     def __del__(self):
+        """
+        don't know what it is, copy/paste it from somewhere on the web
+        don't knwo if it is mandatory
+        """
         self.wait()
 
-    def universes_request(self, request, universes):
-        self.universes_list = universes
-        self.universesList.emit()
-
     def run(self):
-        """the running thread"""
+        """
+        the running thread
+        """
         try:
             self.wrapper = ClientWrapper()
             self.client = self.wrapper.Client()
@@ -50,7 +56,9 @@ class OLA(QThread):
                 print 'cannot connect to OLA'
 
     def stop(self):
-        """stop the OLA client wrapper"""
+        """
+        stop the OLA client wrapper
+        """
         if self.client:
             self.wrapper.Stop()
             if debug:
@@ -58,22 +66,30 @@ class OLA(QThread):
 
 
 class UniversesModel(QAbstractListModel):
-    """List Model of univeses available in OLA"""
+    """
+    List Model of  available universes in OLA
+    """
     def __init__(self, parent):
         super(UniversesModel, self).__init__(parent)
         self.universes_list = []
         self.parent = parent
 
     def rowCount(self, index=QModelIndex()):
-        """return the number of universes present"""
+        """
+        Return the number of universes present
+        """
         return len(self.universes_list)
 
     def object(self, row):
-        """return object for an index"""   
+        """
+        return the universe object for a given row
+        """   
         return  self.universes_list[row]
 
     def data(self, index, role=Qt.DisplayRole):
-        """return the name of the universe"""
+        """
+        return the name of the universe
+        """
         if index.isValid():
             row = index.row()
             if role == Qt.DisplayRole:
@@ -91,7 +107,9 @@ class UniversesModel(QAbstractListModel):
             return QVariant()
 
     def update_universes_list(self, RequestStatus, universes):
-        """receive the dmx_list when ola sends new data"""
+        """
+        Receive the list of universes from OLA
+        """
         if RequestStatus.Succeeded():
             self.universes_list = list(universes)
             if debug:
@@ -107,33 +125,47 @@ class UniversesModel(QAbstractListModel):
 
 
 class UniverseModel(QAbstractTableModel):
-    """Table Model of a DMX universe (512 values 0/255)"""
+    """
+    Table Model of a DMX universe (512 values 0/255)
+    """
     def __init__(self, parent):
         super(UniverseModel, self).__init__(parent)
+        # define the proportion of the table
         self.columns = 32
         self.rows = (512/self.columns)
         if int(self.rows)*self.columns < 512:
             self.rows = self.rows + 1
+        # initialize the list of 512 values
         self.dmx_list = []
         for row in range(self.rows):
+            # set each list item at 0 to be sure index exists
+            # we can do this because we are sure that a universe has a constant length
             self.dmx_list.append([0 for i in range(self.columns)])
+            # check to know if the last line will be full or not
             if self.rows-1 == row:
                 delta = self.columns * self.rows
                 delta = delta - 512
                 delta = self.columns - delta
                 self.dmx_list[row] = self.dmx_list[row][:delta]
+        # main window object is need here to access to ola signal
         self.parent = parent
 
     def rowCount(self, index=QModelIndex()):
-        """return the size of the list"""
+        """
+        return the number of rows of the table
+        """
         return self.rows
 
     def columnCount(self, index=QModelIndex()):
-        """return the number of columns per row"""
+        """
+        return the number of columns of the table
+        """
         return self.columns
 
     def data(self, index, role=Qt.DisplayRole):
-        """return value for an index"""
+        """
+        return value for an index
+        """
         rows = index.row()
         columns = index.column()
         index_number = rows - 1
@@ -176,10 +208,14 @@ class UniverseModel(QAbstractTableModel):
         else:
             return QVariant()
 
-    def new_frame(self, data):
-        """receive the dmx_list when ola sends new data"""
+
+    def new_frame(self, RequestStatus, universe, data):
+        """
+        receive the dmx_list when ola sends new data
+        """
         if debug:
-        	print 'new frame received :', len(data), data
+            print 'refresh universe', universe
+            print 'new frame received :', len(data), data
         # if data: does not work because the data list can be empty when fetching DMX
         if data != None:
             for index,value in enumerate(data):
@@ -207,14 +243,29 @@ class UniverseModel(QAbstractTableModel):
 
 
 class Universe(QGroupBox):
-    """docstring for Universe"""
+    """
+    Handle Universe and display its attributes
+    Only one is created and display universe_selected attributes
+    """
     def __init__(self, parent):
         super(Universe, self).__init__()
         # make it available for the whole instance
         self.ola = parent.ola
 		# intialize variable used in ola_connect method
         self.old = None
-        # Create 
+        # Create universe attributes
+        self.create_attributes()
+        # Create the view to display values
+        self.create_tableview()
+        # Add the previous UI stuffs to a layout
+        grid = self.create_layout()
+        self.setLayout(grid)
+        parent.vbox.addWidget(self)
+
+    def create_attributes(self):
+        """
+        create attributes widget for the universe
+        """
         self.id_label = QLabel('Universe ID')
         self.id = QSpinBox()
         self.name_label = QLabel('Name')
@@ -231,8 +282,11 @@ class Universe(QGroupBox):
         self.outputsMenu = QMenu()
         self.inputs.setMenu(self.inputsMenu)
         self.outputs.setMenu(self.outputsMenu)
-        #self.merge_mode = QCheckBox()
-        # Create the view to display values
+
+    def create_tableview(self):
+        """
+        create the table view for DMX values
+        """
         self.view = QTableView()
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
@@ -242,14 +296,18 @@ class Universe(QGroupBox):
         h_headers = QHeaderView(Qt.Horizontal)
         self.view.setHorizontalHeader(h_headers)
         if debug : 
-        	print 'how many lines : ', v_headers.count()
-        	print 'how many columns : ', h_headers.count()
+            print 'how many lines : ', v_headers.count()
+            print 'how many columns : ', h_headers.count()
         # set up rows and columns
         for col in range(self.model.columnCount()):
             self.view.setColumnWidth(col, 28)
         for row in range(self.model.rowCount()):
             self.view.setRowHeight(row, 20)
-        # Add the previous UI stuffs to a layout
+
+    def create_layout(self):
+        """
+        create the layout for the universe display
+        """
         grid = QGridLayout()
         grid.addWidget(self.id, 0, 0, 1, 1)
         grid.addWidget(self.name, 0, 1, 1, 1)
@@ -260,14 +318,14 @@ class Universe(QGroupBox):
         grid.addWidget(self.inputs, 0, 7, 1, 1)
         grid.addWidget(self.outputs, 0, 9, 1, 1)
         grid.addWidget(self.view,1, 0, 15, 10)
-        # Create the settings Layout
-        self.settings = QLabel('Some Widgets to patch universes inputs & outputs')
-        self.settings.setVisible(False)
-        grid.addWidget(self.settings)
-        self.setLayout(grid)
-        parent.vbox.addWidget(self)
+        return grid
 
-    def connect(self, universe):
+    def selection_changed(self, universe):
+        """
+        universe selected has just changed
+        disconnect old universe from ola dmx_frame update
+        and connect the new universe
+        """
         if self.ola.client:
             if universe.id != self.old:
                 if self.old:
@@ -281,8 +339,8 @@ class Universe(QGroupBox):
                     print 'connect universe :', universe.id
                 self.ola.client.RegisterUniverse(universe.id, self.ola.client.REGISTER, self.model.new_frame)
                 self.ola.universeChanged.connect(self.model.layoutChanged.emit)
-                self.ola.client.FetchDmx(universe.id, self.refresh)
-                self.display_properties(universe)
+                self.ola.client.FetchDmx(universe.id, self.model.new_frame)
+                self.display_attributes(universe)
                 self.old = universe.id
                 return True
             else:
@@ -293,7 +351,10 @@ class Universe(QGroupBox):
         else:
             return False
 
-    def display_properties(self, universe):
+    def display_attributes(self, universe):
+        """
+        display universe attributes
+        """
         self.id.setValue(universe.id)
         self.name.setText(universe.name)
         if universe.merge_mode == 1:
@@ -303,14 +364,11 @@ class Universe(QGroupBox):
             self.merge_mode_htp.setChecked(False)
             self.merge_mode_ltp.setChecked(True)
 
-    def refresh(self, RequestStatus, universe, dmx_list):
-    	if debug:
-    		print 'refresh universe', universe
-        self.model.new_frame(dmx_list)
-
 
 class MainWindow(QMainWindow):
-    """This is the main window"""
+    """
+    This is the main window
+    """
     def __init__(self):
         super(MainWindow, self).__init__()
         # initialize to None just to know if a universe has ever been seleted
@@ -319,10 +377,8 @@ class MainWindow(QMainWindow):
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
         self.setCentralWidget(frame)
-        # create a status bar
-        self.status("Ready", 0)
         # create a ToolBar
-        self.createToolBar()
+        self.create_toolBar()
 		# set up the window
         self.setWindowTitle("OLA GUI")
         self.setFixedWidth(1086)
@@ -335,20 +391,31 @@ class MainWindow(QMainWindow):
             print 'make a ola_connection request'
         # When creating the app, there is no universe selected
         self.universe_selected = None
+        # display a message to say init is over
+        self.status("Ready", 0)
         # Try tp create OLA client
-        self.ola_create()
+        self.create_ola()
 
     def debug_sw(self, state):
+        """
+        switch on or off the debug print to console
+        """
     	global debug
     	debug = state
 
     def status(self, message, timeout=2000):
+        """
+        Display a message on the Status bar
+        """
         if timeout == 0:
             timeout = 999999999
         self.statusBar().showMessage(message, timeout)
 
-    def createToolBar(self):
-        self.createActions()
+    def create_toolBar(self):
+        """
+        create the toolbar of the app
+        it contains debug toggle, ola_connection toggle and universes_list
+        """
         mytoolbar = QToolBar()
         # temporary debug UI toggle
         debug_UI = QCheckBox('Debug')
@@ -357,52 +424,25 @@ class MainWindow(QMainWindow):
         debug_UI.stateChanged.connect(self.debug_sw)
         mytoolbar.addWidget(debug_UI)
         self.ola_connection = QCheckBox('OLA')
-        self.ola_connection.released.connect(self.ola_create)
+        self.ola_connection.released.connect(self.create_ola)
         mytoolbar.addWidget(self.ola_connection)
-        # I MUST MOVE SETTINGS PANEL FOR SELECTED UNIVERS IN tHE UNIVERSE GROUPBOX
-        #mytoolbar.addAction(self.settingsAct)
-        mytoolbar.addAction(self.displayAct)
-        self.settingsAct.setVisible(True)
-        self.displayAct.setVisible(False)
         mytoolbar.setMovable(False)
         mytoolbar.setFixedWidth(110)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
         self.toolbar = mytoolbar
 
-    def createActions(self):
-        """create all actions"""
-        root = QFileInfo(__file__).absolutePath()
-
-        self.settingsAct = QAction(QIcon(root + '/images/settings.svg'), "Settings", self,
-                                  statusTip="Settings panel for the selected universe",
-                                  triggered=self.openSettingsPanel)
-
-        self.displayAct = QAction(QIcon(root + '/images/display.svg'),"Display", self,
-                                  statusTip="Display value for the selected universe",
-                                  triggered=self.openDisplayPanel)
-
-    def openSettingsPanel(self):
-        """switch to the settings editor"""
-        if debug:
-            print 'switch to the settings view'
-        self.displayAct.setVisible(True)
-        self.settingsAct.setVisible(False)
-        self.universe.view.setVisible(False)
-        self.universe.settings.setVisible(True)
-
-    def openDisplayPanel(self):
-        """switch to the universe display panel"""
-        if debug:
-            print 'switch to the display view'
-        self.displayAct.setVisible(False)
-        self.settingsAct.setVisible(True)
-        self.universe.view.setVisible(True)
-        self.universe.settings.setVisible(False)
-
     def create_universe(self):
+        """
+        create a new universe
+        """
         print 'TODO : create a new universe'
 
-    def ola_create(self):
+    def create_ola(self):
+        """
+        create the ola client. Called when app is launched.
+        If olad is not running at this time,
+        you can use the ola_connection button to connect ola later
+        """
         # check if there is not already a OLA client
         if not self.ola:
             # create a OLA client
@@ -430,21 +470,25 @@ class MainWindow(QMainWindow):
                 self.ola_connection.setChecked(False)
 
     def universes_refresh(self):
+        """
+        refresh the universes list.
+        This method is just a link between the button from the toolbar and the ola_client
+        """
         if debug:
             print 'refresh universe list'
         self.ola.client.FetchUniverses(self.list_model.update_universes_list)
 
     def create_universe_panel(self):
+        """
+        create the panel with a qlistview to display universes list
+        Called only once on MainWindow creation
+        """
         self.toolbar.addSeparator()
-        self.selectorGroup = QGroupBox()
-        self.selectorLayout = QVBoxLayout()
-        self.selectorGroup.setLayout(self.selectorLayout)
-        self.toolbar.addWidget(self.selectorGroup)
         model = UniversesModel(self)
         self.list_model = model
         self.list_view = QListView()
         self.list_view.setModel(model)
-        self.selectorLayout.addWidget(self.list_view)
+        self.toolbar.addWidget(self.list_view)
         self.ola.universesList.connect(self.list_model.layoutChanged.emit)
         # Universe Selected Change
         self.list_view.selectionModel().selectionChanged.connect(self.universe_selection_changed)
@@ -465,9 +509,12 @@ class MainWindow(QMainWindow):
         self.universe_selected = universe
         if debug:
             print 'selected universe :', universe
-        self.universe.connect(self.universe_selected)
+        self.universe.selection_changed(self.universe_selected)
 
     def closeEvent(self, event):
+        """
+        Called when app is about to closed
+        """
         # why this is happenning twice?
         if self.ola:
             self.ola.stop()
