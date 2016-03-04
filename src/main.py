@@ -174,7 +174,17 @@ class Universe(QGroupBox):
         self.name = QLineEdit()
         self.name.setFixedWidth(200)
         self.merge_mode_label = QLabel('Merge Mode')
-        self.merge_mode = QCheckBox()
+        self.merge_mode_htp_label = QLabel('HTP')
+        self.merge_mode_htp = QRadioButton()
+        self.merge_mode_ltp_label = QLabel('LTP')
+        self.merge_mode_ltp = QRadioButton()
+        self.inputs = QPushButton('Inputs')
+        self.outputs = QPushButton('Outputs')
+        self.inputsMenu = QMenu()
+        self.outputsMenu = QMenu()
+        self.inputs.setMenu(self.inputsMenu)
+        self.outputs.setMenu(self.outputsMenu)
+        #self.merge_mode = QCheckBox()
         # Create the view to display values
         self.view = QTableView()
         self.model = UniverseModel(self)
@@ -194,13 +204,15 @@ class Universe(QGroupBox):
             self.view.setRowHeight(row, 20)
         # Add the previous UI stuffs to a layout
         grid = QGridLayout()
-        grid.addWidget(self.id_label, 0, 0, 1, 1)
-        grid.addWidget(self.name_label, 0, 1, 1, 1)
-        grid.addWidget(self.merge_mode_label, 0, 2, 1, 1)
-        grid.addWidget(self.id, 1, 0, 1, 1)
-        grid.addWidget(self.name, 1, 1, 1, 1)
-        grid.addWidget(self.merge_mode, 1, 2, 1, 1)
-        grid.addWidget(self.view,2, 0, 15, 10)
+        grid.addWidget(self.id, 0, 0, 1, 1)
+        grid.addWidget(self.name, 0, 1, 1, 1)
+        grid.addWidget(self.merge_mode_htp_label, 0, 2, 1, 1)
+        grid.addWidget(self.merge_mode_htp, 0, 3, 1, 1)
+        grid.addWidget(self.merge_mode_ltp_label, 0, 4, 1, 1)
+        grid.addWidget(self.merge_mode_ltp, 0, 5, 1, 1)
+        grid.addWidget(self.inputs, 0, 7, 1, 1)
+        grid.addWidget(self.outputs, 0, 9, 1, 1)
+        grid.addWidget(self.view,1, 0, 15, 10)
         # Create the settings Layout
         self.settings = QLabel('Some Widgets to patch universes inputs & outputs')
         self.settings.setVisible(False)
@@ -238,9 +250,11 @@ class Universe(QGroupBox):
         self.id.setValue(universe.id)
         self.name.setText(universe.name)
         if universe.merge_mode == 1:
-            self.merge_mode.setChecked(True)
+            self.merge_mode_htp.setChecked(True)
+            self.merge_mode_ltp.setChecked(False)
         else:
-            self.merge_mode.setChecked(False)
+            self.merge_mode_htp.setChecked(False)
+            self.merge_mode_ltp.setChecked(True)
 
     def refresh(self, RequestStatus, universe, dmx_list):
     	if debug:
@@ -265,7 +279,7 @@ class MainWindow(QMainWindow):
 		# set up the window
         self.setWindowTitle("OLA GUI")
         self.setFixedWidth(1086)
-        self.setFixedHeight(488)
+        self.setFixedHeight(459)
         self.move(0, 0)
         # initialize ola to be sure it exists
         self.ola = None
