@@ -8,9 +8,10 @@ from time import sleep
 from random import randrange
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
-from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex, QFileInfo, QCoreApplication
+from PyQt5.QtCore import QThread, QAbstractTableModel, Qt, QVariant, pyqtSignal, QModelIndex, \
+                         QAbstractListModel, QFileInfo, QCoreApplication
 from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, QVBoxLayout, \
-                            QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QLineEdit, \
+                            QTableView, QCheckBox, QSpinBox, QLabel, QMainWindow, QLineEdit, QListView, \
                             QPushButton, QToolBar, QMenu, QFrame, QHeaderView, QAction, QRadioButton
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
@@ -31,9 +32,6 @@ class OLA(QThread):
 
     def __del__(self):
         self.wait()
-
-    def universes_refresh(self):
-        self.client.FetchUniverses(self.universes_request)
 
     def universes_request(self, request, universes):
         self.universes_list = universes
@@ -57,6 +55,49 @@ class OLA(QThread):
             self.wrapper.Stop()
             if debug:
                 print 'connection to OLA is closed'
+
+
+class UniversesModel(QAbstractListModel):
+    """List Model of univeses available in OLA"""
+    def __init__(self, parent):
+        super(UniversesModel, self).__init__(parent)
+        self.universes_list = []
+        self.parent = parent
+
+    def rowCount(self, index=QModelIndex()):
+        """return the number of universes present"""
+        return len(self.universes_list)
+
+    def object(self, row):
+        """return object for an index"""   
+        return  self.universes_list[row]
+
+    def data(self, index, role=Qt.DisplayRole):
+        """return the name of the universe"""
+        if index.isValid():
+            row = index.row()
+            if role == Qt.DisplayRole:
+                try:
+                    value = self.universes_list[row].name
+                    return QVariant(value)
+                except IndexError:
+                    if debug:
+                        # these cells does not exists
+                        print(row, 'is out of universes list')
+                        return QVariant()
+            else:
+                return QVariant()
+        else:
+            return QVariant()
+
+    def update_universes_list(self, RequestStatus, universes):
+        """receive the dmx_list when ola sends new data"""
+        if RequestStatus.Succeeded():
+            if universes:
+                self.universes_list = []
+                for index, universe in enumerate(universes):
+                    self.universes_list.append(universe)
+                self.parent.ola.universesList.emit()
 
 
 class UniverseModel(QAbstractTableModel):
@@ -273,7 +314,7 @@ class MainWindow(QMainWindow):
         self.vbox = QVBoxLayout(frame)
         self.setCentralWidget(frame)
         # create a status bar
-        self.status("Ready", 999999)
+        self.status("Ready", 0)
         # create a ToolBar
         self.createToolBar()
 		# set up the window
@@ -296,6 +337,8 @@ class MainWindow(QMainWindow):
     	debug = state
 
     def status(self, message, timeout=2000):
+        if timeout == 0:
+            timeout = 999999999
         self.statusBar().showMessage(message, timeout)
 
     def createToolBar(self):
@@ -363,87 +406,60 @@ class MainWindow(QMainWindow):
                 self.ola = ola
                 self.ola_connection.setEnabled(False)
                 self.status("connected to OLA")
-                # connect signal from OLA client to function here to fillin universes access
-                self.ola.universesList.connect(self.update_universes_list)
-                # please update universes list
-                self.ola.universes_refresh()
                 self.ola_connection.setChecked(True)
                 # create a button to add a new universe
                 new_universe = QPushButton('new universe')
                 new_universe.released.connect(self.create_universe)
                 self.toolbar.addWidget(new_universe)
                 refresh_universes = QPushButton('refresh list')
-                refresh_universes.released.connect(self.ola.universes_refresh)
                 self.toolbar.addWidget(refresh_universes)
                 # create the panel to display universe
-                self.universe_panel()
+                self.create_universe_panel()
+                # please update universes list
+                self.universes_refresh()
+                refresh_universes.released.connect(self.universes_refresh)
+                
             else:
-                self.status("can't connect to OLA. Is it running?", 999999)
+                self.status("can't connect to OLA. Is it running?", 0)
                 self.ola_connection.setChecked(False)
 
-    def universe_panel(self):
-        self.toolbar.addSeparator()
-        self.selectorMenu = QGroupBox()
-        self.selectorLayout = QVBoxLayout()
-        self.selectorMenu.setLayout(self.selectorLayout)
-        self.toolbar.addWidget(self.selectorMenu)
-
-    def clean_universes_list(self):
-        """clean the universes list"""
-        for i in range(self.selectorLayout.count()):
-            item = self.selectorLayout.itemAt(i)
-            if item:
-                widget = item.widget()
-                self.selectorLayout.removeWidget(widget)
-                widget.deleteLater()
-
-    def update_universes_list(self):
-        """
-        Update the list of the existing universes in OLA
-        Create a button per universe to be able to select it
-        """
+    def universes_refresh(self):
         if debug:
-            print 'update universes list'
-        # I don't know why, but I need to call the clean several times to be sure it's done????
-        if self.selectorLayout.count():
-            self.clean_universes_list()
-        if self.selectorLayout.count():
-            self.clean_universes_list()
-        if self.selectorLayout.count():
-            self.clean_universes_list()
-        if self.ola.universes_list:
-            if debug:
-                print len(self.ola.universes_list), 'universes found in OLA'
-            for universe in self.ola.universes_list:
-                # PLEASE CREATE A QLISTVIEW ATTACHED TO A QABSTRACTLISTMODEL FOR UNIVERSES
-                button = QRadioButton(str(universe.id))
-                self.selectorLayout.addWidget(button)
-                button.released.connect(self.choose_universe)
-        else:
-            if debug:
-                print 'there is no universes in OLA'  
+            print 'refresh universe list'
+        self.ola.client.FetchUniverses(self.list_model.update_universes_list)
 
-    def choose_universe(self, data=None):
+    def create_universe_panel(self):
+        self.toolbar.addSeparator()
+        self.selectorGroup = QGroupBox()
+        self.selectorLayout = QVBoxLayout()
+        self.selectorGroup.setLayout(self.selectorLayout)
+        self.toolbar.addWidget(self.selectorGroup)
+        model = UniversesModel(self)
+        self.list_model = model
+        self.list_view = QListView()
+        self.list_view.setModel(model)
+        self.selectorLayout.addWidget(self.list_view)
+        self.ola.universesList.connect(self.list_model.layoutChanged.emit)
+        # Universe Selected Change
+        self.list_view.selectionModel().selectionChanged.connect(self.universe_selection_changed)
+
+    def universe_selection_changed(self, universe):
         """
-        Select a universe to display its values or settings
-        The function is called when a universe button is released
+        Universe Selection has changed
+        This method will display Universe attributes
+        such as Id, Name, MergeMode and dmx_list
         """
-        for i in range(self.selectorLayout.count()):
-            # please make a double/triple check to be sure a universe is selected
-            if self.selectorLayout.itemAt(i).widget().isChecked():
-                # A universe is selected
-                universe_id = self.selectorLayout.itemAt(i).widget().text()
-                if not self.universe:
-                    # there is no universe interface created. Please do it
-                    # MAYBE WE CAN DO THIS WHEN CREATING THE MAIN WINDOW?
-                    self.universe = Universe(self)
-                # Fill in the universe_selected variable
-                for universe in self.ola.universes_list:
-                    if universe.id == int(universe_id):
-                        self.universe_selected = universe
-                        if debug:
-                            print 'selected universe :', universe
-                self.universe.connect(self.universe_selected)
+        row = universe.indexes()[0].row()
+        universe = universe.indexes()[0].model().object(row)
+        if not self.universe:
+            # there is no universe interface created. Please do it
+            # MAYBE WE CAN DO THIS WHEN CREATING THE MAIN WINDOW?
+            self.universe = Universe(self)
+        # Fill in the universe_selected variable
+        self.universe_selected = universe
+        if debug:
+            print 'selected universe :', universe
+        self.universe.connect(self.universe_selected)
 
     def closeEvent(self, event):
         # why this is happenning twice?
