@@ -370,6 +370,7 @@ class Universe(QGroupBox):
                 self.ola.universeChanged.connect(self.model.layoutChanged.emit)
                 self.ola.client.FetchDmx(universe.id, self.model.new_frame)
                 self.display_attributes(universe)
+                self.display_ports(universe)
                 self.old = universe.id
                 return True
             else:
@@ -379,6 +380,33 @@ class Universe(QGroupBox):
                 return False
         else:
             return False
+
+    def display_ports(self, universe):
+        """display ports"""
+        self.ola.client.GetCandidatePorts(self.GetCandidatePortsCallback, universe.id)
+
+    def GetCandidatePortsCallback(self, status, devices):
+        """
+        Function that fill-in universe menus with candidate devices/ports
+        We need to make menus checkable to be able to patch ports
+        """
+        if status.Succeeded():
+            for device in devices:
+                print('Device {d.alias}: {d.name}'.format(d=device))
+
+                print('Candidate input ports:')
+                for port in device.input_ports:
+                    s = '  port {p.id}, {p.description}, supports RDM: ' \
+                        '{p.supports_rdm}'
+                    print(s.format(p=port))
+
+                    print('Candidate output ports:')
+                for port in device.output_ports:
+                    s = '  port {p.id}, {p.description}, supports RDM: ' \
+                        '{p.supports_rdm}'
+                    print(s.format(p=port))
+        else:
+            print('Error: ' % status.message)
 
     def display_attributes(self, universe):
         """
