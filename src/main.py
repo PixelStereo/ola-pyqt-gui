@@ -17,6 +17,35 @@ from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
 debug = 1
 
+class OlaServer(QThread):
+    """
+    Separate Thread that run OLA Server
+    """
+    def __init__(self):
+        QThread.__init__(self)
+        self.client = None
+        # start the thread
+        self.start()
+        if debug:
+            print 'try to launch OLA server'
+
+    def __del__(self):
+        """
+        don't know what it is, copy/paste it from somewhere on the web
+        don't knwo if it is mandatory
+        """
+        self.wait()
+
+    def run(self):
+        """
+        the running thread
+        """
+        import os
+        os.popen('/usr/local/Cellar/ola/0.10.0/bin/olad')
+
+    def stop(self):
+        """Stop the OLA server if it has been launch by this thread"""
+        pass
 
 class OLA(QThread):
     """
@@ -521,6 +550,7 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    OlaServer()
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
