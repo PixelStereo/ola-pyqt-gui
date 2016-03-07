@@ -26,6 +26,7 @@ case "$TRAVIS_OS_NAME" in
 esac
 echo "START install-deps"
 git clone https://github.com/OpenLightingProject/ola.git ola
+cd ola
 autoreconf -i
 ./configure --with-python
 make
