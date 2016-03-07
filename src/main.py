@@ -1,9 +1,12 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
+import signal
 import getopt
 import textwrap
+import subprocess
 from time import sleep
 from random import randrange
 from ola.ClientWrapper import ClientWrapper
@@ -15,7 +18,10 @@ from PyQt5.QtWidgets import QApplication, QGroupBox, QVBoxLayout, QGridLayout, Q
                             QPushButton, QToolBar, QMenu, QFrame, QHeaderView, QAction, QRadioButton
 from PyQt5.QtGui import QColor, QBrush, QFont, QIcon
 
+
+# a ugly global, used to print debug messages to console
 debug = 1
+
 
 class OlaServer(QThread):
     """
@@ -23,7 +29,6 @@ class OlaServer(QThread):
     """
     def __init__(self):
         QThread.__init__(self)
-        self.client = None
         # start the thread
         self.start()
         if debug:
@@ -40,16 +45,18 @@ class OlaServer(QThread):
         """
         the running thread
         """
-        import os
-        os.popen('/usr/local/Cellar/ola/0.10.0/bin/olad')
+        cmd = "/usr/local/Cellar/ola/0.10.0/bin/olad"
+        self.the_process = subprocess.Popen("exec " + cmd, stdout=subprocess.PIPE, shell=True)
 
     def stop(self):
         """Stop the OLA server if it has been launch by this thread"""
-        pass
+        self.the_process.terminate()
+        self.the_process.kill()
+
 
 class OLA(QThread):
     """
-    Separate Thread that run OLA client
+    Separate Thread that run OLA Cliebt
     """
     # signal that there is a new frame for the selected universe
     universeChanged = pyqtSignal()
@@ -57,11 +64,20 @@ class OLA(QThread):
     universesList = pyqtSignal()
     def __init__(self):
         QThread.__init__(self)
+        self.server = None
         self.client = None
+        try:
+            # launch OLA server
+            self.server = OlaServer()
+        except:
+            # OLA server does not work properly
+            print 'OLA server not responding'
+        sleep(1)
         # start the thread
-        self.start()
-        if debug:
-            print 'try to connecto to OLA'
+        if self.server:
+            self.start()
+        else:
+            print 'no server is running, cannot start a client'
 
     def __del__(self):
         """
@@ -77,9 +93,10 @@ class OLA(QThread):
         try:
             self.wrapper = ClientWrapper()
             self.client = self.wrapper.Client()
+            self.wrapper.Run()
             if debug:
                 print 'connected to OLA server'
-            self.wrapper.Run()
+            
         except OLADNotRunningException:
             if debug:
                 print 'cannot connect to OLA'
@@ -91,7 +108,11 @@ class OLA(QThread):
         if self.client:
             self.wrapper.Stop()
             if debug:
-                print 'connection to OLA is closed'
+                print 'OLA client is stopped'
+        if self.server:
+            self.server.stop()
+            if debug:
+                print 'OLA server is stopped'
 
 
 class UniversesModel(QAbstractListModel):
@@ -578,12 +599,6 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    try:
-        # launch OLA server
-        OlaServer()
-    except:
-        # OLA server does not work properly
-        print 'OLA server not responding'
     # create the current App
     app = QApplication(sys.argv)
     # create the Main Window and display it
