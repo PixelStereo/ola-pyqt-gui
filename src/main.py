@@ -578,8 +578,15 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    OlaServer()
+    try:
+        # launch OLA server
+        OlaServer()
+    except:
+        # OLA server does not work properly
+        print 'OLA server not responding'
+    # create the current App
     app = QApplication(sys.argv)
+    # create the Main Window and display it
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
