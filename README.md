@@ -1,17 +1,22 @@
 #Ola Pyqt Gui
 
-This is a little application to configure the wonderful OLA framework. ([open-lighting-architecture](https://www.openlighting.org/ola/))
+This is a DMX application that used the wonderful OLA framework. ([open-lighting-architecture](https://www.openlighting.org/ola/))
+
+It's developed on OSX with python 2.7 and PyQt5 but it might work on linux too and windows.    
+Windows users will only have access to a ([restricted numbers of protocols.](https://www.openlighting.org/ola/))    
 
 ##Roadmap
 * ~~Display DMX values~~
 * ~~Select a uiverse to display~~
 * ~~Display Name and Merge Mode~~
+* ~~Launch/kill Ola server on startup/exit~~
+* Edit Universe ID, name and merge mode
 * Create and patch universes/devices
-* Send values to Universe if no input device
+* Use dedicated embeded conf files
+* Create an interface to send DMX (only if universe have no input)
+* Embed an independant OLA in the app
 * Create an editor for ola_trigger
-* Embed conf files
-* Embed OLA
-* Implement RDM
+* Implement RDM discovery / patch
 
 ##Credits
 Conception and Development is made by PixelStereo
