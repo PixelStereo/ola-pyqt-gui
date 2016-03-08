@@ -141,6 +141,7 @@ class Universe(QGroupBox):
         self.ola = parent.ola
         # intialize variable used in ola_connect method
         self.old = None
+        self.universe_selected = None
         # Create universe attributes
         self.create_attributes()
         # Create the view to display values
@@ -166,6 +167,8 @@ class Universe(QGroupBox):
         self.merge_mode_htp = QRadioButton()
         self.merge_mode_ltp_label = QLabel('LTP')
         self.merge_mode_ltp = QRadioButton()
+        self.merge_mode_ltp.toggled.connect(self.edit_merge_mode_ltp)
+        self.merge_mode_htp.toggled.connect(self.edit_merge_mode_htp)
         self.inputs = QPushButton('Inputs')
         self.outputs = QPushButton('Outputs')
         self.inputsMenu = QMenu()
@@ -174,13 +177,34 @@ class Universe(QGroupBox):
         self.outputs.setMenu(self.outputsMenu)
 
     def edit_name(self, name):
-        if self.ola.client.SetUniverseName(self.universe_selected.id, name):
-            print self.parent
-            self.parent.universes_refresh()
-        else:
-            self.parent.status("edit failed")
+        if self.universe_selected:
+            if self.ola.client.SetUniverseName(self.universe_selected.id, name):
+                self.parent.universes_refresh()
+            else:
+                self.parent.status("name edit failed")
+                if debug:
+                    "edit universe name failed"
+
+    def edit_merge_mode_htp(self, state):
+        if state:
             if debug:
-                "edit universe name failed"
+                print 'switch universe to HTP merge mode'
+            self.edit_merge_mode(1)
+
+    def edit_merge_mode_ltp(self, state):
+        if state:
+            if debug:
+                print 'switch universe to LTP merge mode'
+            self.edit_merge_mode(2)
+
+    def edit_merge_mode(self, merge_mode):
+        if self.universe_selected:
+            if self.ola.client.SetUniverseMergeMode(self.universe_selected.id, merge_mode):
+                self.parent.universes_refresh()
+            else:
+                self.parent.status("merge mode edit failed")
+                if debug:
+                    "edit universe merge mode failed"
 
     def create_tableview(self):
         """
@@ -227,6 +251,7 @@ class Universe(QGroupBox):
         """
         if self.ola.client:
             if universe.id != self.old:
+                self.universe_selected = universe
                 if self.old:
                     # unregister the previous universe (self.old)
                     if debug:
@@ -242,7 +267,6 @@ class Universe(QGroupBox):
                 self.display_attributes(universe)
                 self.display_ports(universe)
                 self.old = universe.id
-                self.universe_selected = universe
                 return True
             else:
                 # ola wants to connect again to the universe it's already binding to
