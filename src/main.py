@@ -473,6 +473,8 @@ class MainWindow(QMainWindow):
         self.status("Ready", 0)
         # Try tp create OLA client
         self.create_ola()
+        # Show the current main window
+        self.show()
 
     def debug_sw(self, state):
         """
@@ -601,7 +603,9 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     # create the current App
     app = QApplication(sys.argv)
+    root = QFileInfo(__file__).absolutePath()
+    path = root+'/icon/ola-pyqt-gui.png'
+    app.setWindowIcon(QIcon(path))
     # create the Main Window and display it
     window = MainWindow()
-    window.show()
     sys.exit(app.exec_())
