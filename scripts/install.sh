@@ -15,6 +15,7 @@ case "$TRAVIS_OS_NAME" in
 esac
 
 cd src
+# build is a separate script to be able to run it outside travis
 ../scripts/build.sh ${TRAVIS_TAG}
 cd dist
 
