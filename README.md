@@ -3,7 +3,7 @@
 This is a DMX application that used the wonderful OLA framework. ([open-lighting-architecture](https://www.openlighting.org/ola/))
 
 It's developed on OSX with python 2.7 and PyQt5 but it might work on linux too and windows.    
-Windows users will only have access to a ([restricted numbers of protocols.](https://www.openlighting.org/ola/))    
+Windows users will only have access to a [restricted numbers of protocols](https://www.openlighting.org/ola/) (only Artnet for now).    
 
 ##Roadmap
 * ~~Display DMX values~~
