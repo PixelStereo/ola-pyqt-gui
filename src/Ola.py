@@ -1,0 +1,89 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import threading
+import subprocess
+from time import sleep
+
+from ola.ClientWrapper import ClientWrapper
+from ola.OlaClient import OLADNotRunningException
+
+from PyQt5.QtCore import pyqtSignal, QThread
+
+debug = 1
+
+class OlaServer(QThread):
+    """
+    Separate Thread that run OLA Server
+    """
+    def __init__(self):
+        QThread.__init__(self)
+        # start the thread
+        self.start()
+        if debug:
+            print 'try to launch OLA server'
+
+    def run(self):
+        """
+        the running thread
+        """
+        cmd = "/usr/local/Cellar/ola/0.10.0/bin/olad"
+        self.the_process = subprocess.Popen("exec " + cmd, stdout=subprocess.PIPE, shell=True)
+
+    def stop(self):
+        """Stop the OLA server if it has been launch by this thread"""
+        self.the_process.terminate()
+        self.the_process.kill()
+
+class OLA(QThread):
+    """
+    Separate Thread that run OLA Cliebt
+    """
+    # signal that there is a new frame for the selected universe
+    universeChanged = pyqtSignal()
+    # signal that there is a new universes_list to display
+    universesList = pyqtSignal()
+    def __init__(self):
+        QThread.__init__(self)
+        self.server = None
+        self.client = None
+        try:
+            # launch OLA server
+            self.server = OlaServer()
+        except:
+            # OLA server does not work properly
+            print 'OLA server not responding'
+        sleep(1)
+        # start the thread
+        if self.server:
+            self.start()
+        else:
+            print 'no server is running, cannot start a client'
+
+    def run(self):
+        """
+        the running thread
+        """
+        try:
+            self.wrapper = ClientWrapper()
+            self.client = self.wrapper.Client()
+            self.wrapper.Run()
+            if debug:
+                print 'connected to OLA server'
+            
+        except OLADNotRunningException:
+            if debug:
+                print 'cannot connect to OLA'
+
+    def stop(self):
+        """
+        stop the OLA client wrapper
+        """
+        if self.client:
+            self.wrapper.Stop()
+            if debug:
+                print 'OLA client is stopped'
+        if self.server:
+            self.server.stop()
+            if debug:
+                print 'OLA server is stopped'
