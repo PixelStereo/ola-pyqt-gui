@@ -410,9 +410,6 @@ class MainWindow(QMainWindow):
         debug_UI.setChecked(debug)
         debug_UI.stateChanged.connect(self.debug_sw)
         mytoolbar.addWidget(debug_UI)
-        self.ola_connection = QCheckBox('OLA')
-        self.ola_connection.released.connect(self.create_ola)
-        mytoolbar.addWidget(self.ola_connection)
         mytoolbar.setMovable(False)
         mytoolbar.setFixedWidth(110)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
@@ -428,7 +425,6 @@ class MainWindow(QMainWindow):
         """
         create the ola client. Called when app is launched.
         If olad is not running at this time,
-        you can use the ola_connection button to connect ola later
         """
         # check if there is not already a OLA client
         if not self.ola:
@@ -437,9 +433,7 @@ class MainWindow(QMainWindow):
             sleep(0.5)
             if ola.client:
                 self.ola = ola
-                self.ola_connection.setEnabled(False)
                 self.status("connected to OLA")
-                self.ola_connection.setChecked(True)
                 # create a button to add a new universe
                 new_universe = QPushButton('new universe')
                 new_universe.released.connect(self.create_universe)
@@ -454,7 +448,6 @@ class MainWindow(QMainWindow):
                 
             else:
                 self.status("can't connect to OLA. Is it running?", 0)
-                self.ola_connection.setChecked(False)
 
     def universes_refresh(self):
         """
