@@ -10,6 +10,7 @@ import sys
 import signal
 import getopt
 import textwrap
+from time import sleep
 from random import randrange
 # import from PyQt5 libs
 from PyQt5.QtGui import QIcon
