@@ -149,6 +149,7 @@ class Universe(QGroupBox):
         grid = self.create_layout()
         self.setLayout(grid)
         parent.vbox.addWidget(self)
+        self.parent = parent
 
     def create_attributes(self):
         """
@@ -158,6 +159,7 @@ class Universe(QGroupBox):
         self.id = QSpinBox()
         self.name_label = QLabel('Name')
         self.name = QLineEdit()
+        self.name.textEdited.connect(self.edit_name)
         self.name.setFixedWidth(200)
         self.merge_mode_label = QLabel('Merge Mode')
         self.merge_mode_htp_label = QLabel('HTP')
@@ -170,6 +172,15 @@ class Universe(QGroupBox):
         self.outputsMenu = QMenu()
         self.inputs.setMenu(self.inputsMenu)
         self.outputs.setMenu(self.outputsMenu)
+
+    def edit_name(self, name):
+        if self.ola.client.SetUniverseName(self.universe_selected.id, name):
+            print self.parent
+            self.parent.universes_refresh()
+        else:
+            self.parent.status("edit failed")
+            if debug:
+                "edit universe name failed"
 
     def create_tableview(self):
         """
@@ -231,6 +242,7 @@ class Universe(QGroupBox):
                 self.display_attributes(universe)
                 self.display_ports(universe)
                 self.old = universe.id
+                self.universe_selected = universe
                 return True
             else:
                 # ola wants to connect again to the universe it's already binding to
