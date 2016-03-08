@@ -29,7 +29,7 @@ echo "START install-deps"
 git clone https://github.com/OpenLightingProject/ola.git ola
 cd ola
 autoreconf -i
-./configure --with-python
+./configure --enable-python-libs
 make
 sudo make install
 brew install python
