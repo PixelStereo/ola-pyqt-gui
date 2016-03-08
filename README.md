@@ -10,7 +10,7 @@ Windows users will only have access to a ([restricted numbers of protocols.](htt
 * ~~Select a uiverse to display~~
 * ~~Display Name and Merge Mode~~
 * ~~Launch/kill Ola server on startup/exit~~
-* Edit Universe ID, name and merge mode
+* ~~Edit Universe name and merge mode~~
 * Create and patch universes/devices
 * Use dedicated embeded conf files
 * Create an interface to send DMX (only if universe have no input)
