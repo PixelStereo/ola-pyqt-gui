@@ -1,13 +1,19 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+This module implements a OLA class that launch OLA server 
+and runs a dedicated Client for this server
+"""
+
+#import from standard python lib
 import threading
 import subprocess
 from time import sleep
-
+# import from OLA python module
 from ola.ClientWrapper import ClientWrapper
 from ola.OlaClient import OLADNotRunningException
-
+#import from PyQt5 lib
 from PyQt5.QtCore import pyqtSignal, QThread
 
 debug = 1
