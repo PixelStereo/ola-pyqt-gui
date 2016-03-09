@@ -235,7 +235,7 @@ if __name__ == "__main__":
     # create the current App
     app = QApplication(sys.argv)
     root = QFileInfo(__file__).absolutePath()
-    path = root+'/icon/ola-pyqt-gui.png'
+    path = root+'/icon/icon.png'
     app.setWindowIcon(QIcon(path))
     # create the Main Window and display it
     window = MainWindow()
