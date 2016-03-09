@@ -229,12 +229,6 @@ class Universe(QGroupBox):
         self.merge_mode_ltp = QRadioButton()
         self.merge_mode_ltp.toggled.connect(self.edit_merge_mode_ltp)
         self.merge_mode_htp.toggled.connect(self.edit_merge_mode_htp)
-        self.inputs = QPushButton('Inputs')
-        self.outputs = QPushButton('Outputs')
-        self.inputsMenu = QMenu()
-        self.outputsMenu = QMenu()
-        self.inputs.setMenu(self.inputsMenu)
-        self.outputs.setMenu(self.outputsMenu)
 
     def edit_name(self, name):
         if self.universe_selected:
@@ -298,9 +292,7 @@ class Universe(QGroupBox):
         grid.addWidget(self.merge_mode_htp, 0, 3, 1, 1)
         grid.addWidget(self.merge_mode_ltp_label, 0, 4, 1, 1)
         grid.addWidget(self.merge_mode_ltp, 0, 5, 1, 1)
-        grid.addWidget(self.inputs, 0, 7, 1, 1)
-        grid.addWidget(self.outputs, 0, 9, 1, 1)
-        grid.addWidget(self.view,1, 0, 15, 10)
+        grid.addWidget(self.view,2, 0, 15, 10)
         return grid
 
     def selection_changed(self, universe):
@@ -325,7 +317,6 @@ class Universe(QGroupBox):
                 self.ola.universeChanged.connect(self.model.layoutChanged.emit)
                 self.ola.client.FetchDmx(universe.id, self.model.new_frame)
                 self.display_attributes(universe)
-                self.display_ports(universe)
                 self.old = universe.id
                 return True
             else:
@@ -335,33 +326,6 @@ class Universe(QGroupBox):
                 return False
         else:
             return False
-
-    def display_ports(self, universe):
-        """display ports"""
-        self.ola.client.GetCandidatePorts(self.GetCandidatePortsCallback, universe.id)
-
-    def GetCandidatePortsCallback(self, status, devices):
-        """
-        Function that fill-in universe menus with candidate devices/ports
-        We need to make menus checkable to be able to patch ports
-        """
-        if status.Succeeded():
-            for device in devices:
-                print('Device {d.alias}: {d.name}'.format(d=device))
-
-                print('Candidate input ports:')
-                for port in device.input_ports:
-                    s = '  port {p.id}, {p.description}, supports RDM: ' \
-                        '{p.supports_rdm}'
-                    print(s.format(p=port))
-
-                    print('Candidate output ports:')
-                for port in device.output_ports:
-                    s = '  port {p.id}, {p.description}, supports RDM: ' \
-                        '{p.supports_rdm}'
-                    print(s.format(p=port))
-        else:
-            print('Error: ' % status.message)
 
     def display_attributes(self, universe):
         """
@@ -375,3 +339,6 @@ class Universe(QGroupBox):
         else:
             self.merge_mode_htp.setChecked(False)
             self.merge_mode_ltp.setChecked(True)
+        if debug:
+            print 'Input ports :', universe.input_ports
+            print 'Output ports :', universe.output_ports
