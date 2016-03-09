@@ -5,12 +5,72 @@
 This is a universe groupbox that display universe attributes and DMX values
 """
 
-from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant
+from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, QAbstractListModel
 from PyQt5.QtWidgets import QGroupBox, QGridLayout, QTableView, QSpinBox, QLabel, QLineEdit, \
                             QPushButton, QMenu, QHeaderView, QRadioButton
 from PyQt5.QtGui import QColor, QBrush, QFont
 
 debug = 1
+
+
+class UniversesModel(QAbstractListModel):
+    """
+    List Model of  available universes in OLA
+    """
+    def __init__(self, parent):
+        super(UniversesModel, self).__init__(parent)
+        self.universes_list = []
+        self.parent = parent
+
+    def rowCount(self, index=QModelIndex()):
+        """
+        Return the number of universes present
+        """
+        return len(self.universes_list)
+
+    def object(self, row):
+        """
+        return the universe object for a given row
+        """   
+        return  self.universes_list[row]
+
+    def data(self, index, role=Qt.DisplayRole):
+        """
+        return the name of the universe
+        """
+        if index.isValid():
+            row = index.row()
+            if role == Qt.DisplayRole:
+                try:
+                    value = self.universes_list[row].name
+                    return QVariant(value)
+                except IndexError:
+                    if debug:
+                        # these cells does not exists
+                        print(row, 'is out of universes list')
+                        return QVariant()
+            else:
+                return QVariant()
+        else:
+            return QVariant()
+
+    def update_universes_list(self, RequestStatus, universes):
+        """
+        Receive the list of universes from OLA
+        """
+        if RequestStatus.Succeeded():
+            self.universes_list = list(universes)
+            if debug:
+                if len(universes) == 0:
+                    print 'no universe found'
+                elif len(universes) == 1:
+                    print 'only one universe found'
+                elif len(universes) > 1:
+                    print len(universes), 'universes found'
+                else:
+                    print len(universes), 'ERROR CODE 001'
+            self.parent.ola.universesList.emit()
+
 
 class UniverseModel(QAbstractTableModel):
     """

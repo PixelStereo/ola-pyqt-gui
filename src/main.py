@@ -14,71 +14,14 @@ from time import sleep
 from random import randrange
 # import from PyQt5 libs
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QVariant, QModelIndex, QAbstractListModel, QFileInfo
+from PyQt5.QtCore import Qt, QVariant, QModelIndex, QFileInfo
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QCheckBox, QMainWindow, QListView, QPushButton, QToolBar, QFrame
 # import from current module
 from Ola import OLA
 from universe import Universe
+from universe import UniversesModel
 
 debug = 1
-
-class UniversesModel(QAbstractListModel):
-    """
-    List Model of  available universes in OLA
-    """
-    def __init__(self, parent):
-        super(UniversesModel, self).__init__(parent)
-        self.universes_list = []
-        self.parent = parent
-
-    def rowCount(self, index=QModelIndex()):
-        """
-        Return the number of universes present
-        """
-        return len(self.universes_list)
-
-    def object(self, row):
-        """
-        return the universe object for a given row
-        """   
-        return  self.universes_list[row]
-
-    def data(self, index, role=Qt.DisplayRole):
-        """
-        return the name of the universe
-        """
-        if index.isValid():
-            row = index.row()
-            if role == Qt.DisplayRole:
-                try:
-                    value = self.universes_list[row].name
-                    return QVariant(value)
-                except IndexError:
-                    if debug:
-                        # these cells does not exists
-                        print(row, 'is out of universes list')
-                        return QVariant()
-            else:
-                return QVariant()
-        else:
-            return QVariant()
-
-    def update_universes_list(self, RequestStatus, universes):
-        """
-        Receive the list of universes from OLA
-        """
-        if RequestStatus.Succeeded():
-            self.universes_list = list(universes)
-            if debug:
-                if len(universes) == 0:
-                    print 'no universe found'
-                elif len(universes) == 1:
-                    print 'only one universe found'
-                elif len(universes) > 1:
-                    print len(universes), 'universes found'
-                else:
-                    print len(universes), 'ERROR CODE 001'
-            self.parent.ola.universesList.emit()
 
 
 class MainWindow(QMainWindow):
