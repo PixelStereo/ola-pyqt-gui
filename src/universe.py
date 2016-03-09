@@ -7,7 +7,7 @@ This is a universe groupbox that display universe attributes and DMX values
 
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, QAbstractListModel
 from PyQt5.QtWidgets import QGroupBox, QGridLayout, QTableView, QSpinBox, QLabel, QLineEdit, \
-                            QPushButton, QMenu, QHeaderView, QRadioButton
+                            QPushButton, QMenu, QHeaderView, QRadioButton, QAbstractItemView
 from PyQt5.QtGui import QColor, QBrush, QFont
 
 debug = 1
@@ -265,6 +265,7 @@ class Universe(QGroupBox):
         create the table view for DMX values
         """
         self.view = QTableView()
+        self.view.setSelectionMode(QAbstractItemView.NoSelection)
         self.model = UniverseModel(self)
         self.view.setModel(self.model)
         # set up headers of the QTableView
@@ -292,7 +293,7 @@ class Universe(QGroupBox):
         grid.addWidget(self.merge_mode_htp, 0, 3, 1, 1)
         grid.addWidget(self.merge_mode_ltp_label, 0, 4, 1, 1)
         grid.addWidget(self.merge_mode_ltp, 0, 5, 1, 1)
-        grid.addWidget(self.view,2, 0, 15, 10)
+        grid.addWidget(self.view,2, 0, 18, 10)
         return grid
 
     def selection_changed(self, universe):

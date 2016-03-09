@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QCheckBox, QMainWindow, Q
 from Ola import OLA
 from universe import Universe
 from universe import UniversesModel
+from patch import PatchPanel
 # stylesheet
 import qdarkstyle
 
@@ -34,6 +35,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         # initialize to None just to know if a universe has ever been seleted
         self.universe = None
+        self.settings = None
 		# create a vertical layout in a frame to add widgets
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
@@ -59,12 +61,21 @@ class MainWindow(QMainWindow):
         # Show the current main window
         self.show()
 
-    def debug_sw(self, state):
+    def switch_view(self, view):
         """
-        switch on or off the debug print to console
+        switch the view between universe view or devices view
+        • universe view displays universe attributes (name, id and merge_mode) and DMX values
+        • devices view displays devices attached to the universes (input and ouput ports)
         """
-    	global debug
-    	debug = state
+    	if view:
+            self.devices.setText('Universe')
+            self.universe.setVisible(False)
+            self.settings.setVisible(True)
+            self.settings.display_ports(self.universe_selected.id)
+        else:
+            self.devices.setText('Settings')
+            self.universe.setVisible(True)
+            self.settings.setVisible(False)
 
     def status(self, message, timeout=2000):
         """
@@ -81,15 +92,19 @@ class MainWindow(QMainWindow):
         """
         mytoolbar = QToolBar()
         # temporary debug UI toggle
-        debug_UI = QCheckBox('Debug')
-        global debug
-        debug_UI.setChecked(debug)
-        debug_UI.stateChanged.connect(self.debug_sw)
-        mytoolbar.addWidget(debug_UI)
+        self.devices = QPushButton('Devices')
+        self.devices.setCheckable(True)
+        self.devices.toggled.connect(self.switch_view)
+        self.devices.setEnabled(False)
+        mytoolbar.addWidget(self.devices)
         mytoolbar.setMovable(False)
         mytoolbar.setFixedWidth(110)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
         self.toolbar = mytoolbar
+
+    def create_settings(self):
+        self.settings = PatchPanel(self)
+        self.settings.setVisible(False)
 
     def create_universe(self):
         """
@@ -116,7 +131,7 @@ class MainWindow(QMainWindow):
                 self.toolbar.addWidget(new_universe)
                 refresh_universes = QPushButton('refresh list')
                 self.toolbar.addWidget(refresh_universes)
-                # create the panel to display universe
+                # create the panel to display universe list
                 self.create_universe_panel()
                 # please update universes list
                 self.universes_refresh()
@@ -162,6 +177,8 @@ class MainWindow(QMainWindow):
             # there is no universe interface created. Please do it
             # MAYBE WE CAN DO THIS WHEN CREATING THE MAIN WINDOW?
             self.universe = Universe(self)
+            self.create_settings()
+            self.devices.setEnabled(True)
         # Fill in the universe_selected variable
         self.universe_selected = universe
         if debug:
