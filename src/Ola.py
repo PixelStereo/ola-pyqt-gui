@@ -34,7 +34,7 @@ class OlaServer(QThread):
         the running thread
         """
         try:
-            cmd = "/usr/local/Cellar/ola/*/bin/olad -c ../config"
+            cmd = "/usr/local/bin/olad -c ../config"
             #self.the_process = subprocess.Popen("exec " + cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
             self.the_process = subprocess.Popen("exec " + cmd, shell=True)
         except:
