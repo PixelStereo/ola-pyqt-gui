@@ -6,17 +6,21 @@ It's developed on OSX with python 2.7 and PyQt5 but it might work on linux too a
 Windows users will only have access to a [restricted numbers of protocols](https://www.openlighting.org/ola/) (only Artnet for now).    
 
 ##Roadmap
+###Version 0.1
 * ~~Display DMX values~~
 * ~~Select a uiverse to display~~
 * ~~Display Name and Merge Mode~~
 * ~~Launch/kill Ola server on startup/exit~~
 * ~~Edit Universe name and merge mode~~
+* ~~Use dedicated embeded conf files~~
 * Create and patch universes/devices
-* Use dedicated embeded conf files
-* Create an interface to send DMX (only if universe have no input)
 * Embed an independant OLA in the app
-* Create an editor for ola_trigger
+###Version 0.2
+* Create an interface to send DMX (only if universe have no input)
+###Version 0.3
 * Implement RDM discovery / patch
+###Version 0.4
+* Create an editor for ola_trigger
 
 ##Credits
 Conception and Development is made by PixelStereo

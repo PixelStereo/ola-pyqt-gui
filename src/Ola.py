@@ -33,8 +33,12 @@ class OlaServer(QThread):
         """
         the running thread
         """
-        cmd = "/usr/local/Cellar/ola/0.10.0/bin/olad"
-        self.the_process = subprocess.Popen("exec " + cmd, stdout=subprocess.PIPE, shell=True)
+        try:
+            cmd = "/usr/local/Cellar/ola/0.10.0/bin/olad -c ../config"
+            #self.the_process = subprocess.Popen("exec " + cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+            self.the_process = subprocess.Popen("exec " + cmd, shell=True)
+        except:
+            print 'ola cannot be launched'
 
     def stop(self):
         """Stop the OLA server if it has been launch by this thread"""
@@ -73,10 +77,9 @@ class OLA(QThread):
         try:
             self.wrapper = ClientWrapper()
             self.client = self.wrapper.Client()
-            self.wrapper.Run()
             if debug:
                 print 'connected to OLA server'
-            
+            self.wrapper.Run()
         except OLADNotRunningException:
             if debug:
                 print 'cannot connect to OLA'
