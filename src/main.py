@@ -119,9 +119,10 @@ class MainWindow(QMainWindow):
                 # please update universes list
                 self.universes_refresh()
                 refresh_universes.released.connect(self.universes_refresh)
-                
             else:
                 self.status("can't connect to OLA. Is it running?", 0)
+                # quit the app if no OLA server
+                quit()
 
     def universes_refresh(self):
         """
