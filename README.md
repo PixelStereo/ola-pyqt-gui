@@ -15,10 +15,13 @@ Windows users will only have access to a [restricted numbers of protocols](https
 * ~~Use dedicated embeded conf files~~
 * Create and patch universes/devices
 * Embed an independant OLA in the app    
+
 ###Version 0.2
-* Create an interface to send DMX (only if universe have no input)    
+* Create an interface to send DMX (only if universe have no input)  
+
 ###Version 0.3
 * Implement RDM discovery / patch    
+
 ###Version 0.4
 * Create an editor for ola_trigger
 
