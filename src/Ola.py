@@ -18,9 +18,10 @@ from PyQt5.QtCore import pyqtSignal, QThread
 
 debug = 1
 
+
 class OlaServer(QThread):
     """
-    Separate Thread that run OLA Server
+    Separate Thread that run OLA Server (launched by OLA client)
     """
     def __init__(self):
         QThread.__init__(self)
@@ -45,9 +46,11 @@ class OlaServer(QThread):
         self.the_process.terminate()
         self.the_process.kill()
 
+
 class OLA(QThread):
     """
-    Separate Thread that run OLA Cliebt
+    Separate Thread that launch OLA server and run OLA Client
+    It runs only if OLA server is responding
     """
     # signal that there is a new frame for the selected universe
     universeChanged = pyqtSignal()
