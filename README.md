@@ -14,7 +14,8 @@ Windows users will only have access to a [restricted numbers of protocols](https
 * ~~Edit Universe name and merge mode~~
 * ~~Use dedicated embeded conf files~~
 * Create and patch universes/devices
-* Embed an independant OLA in the app    
+* Embed an independant OLA in the app
+* Tests with full code coverage    
 
 ###Version 0.2
 * Create an interface to send DMX (only if universe have no input)  
