@@ -20,6 +20,8 @@ from PyQt5.QtWidgets import QApplication, QVBoxLayout, QCheckBox, QMainWindow, Q
 from Ola import OLA
 from universe import Universe
 from universe import UniversesModel
+# stylesheet
+import qdarkstyle
 
 debug = 1
 
@@ -181,6 +183,7 @@ if __name__ == "__main__":
     root = QFileInfo(__file__).absolutePath()
     path = root+'/icon/icon.png'
     app.setWindowIcon(QIcon(path))
+    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     # create the Main Window and display it
     window = MainWindow()
     sys.exit(app.exec_())

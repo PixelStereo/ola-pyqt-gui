@@ -30,22 +30,9 @@ case "$TRAVIS_OS_NAME" in
   ;;
 esac
 
-echo ""
-echo ""
 echo "------------------"
-echo "START install-deps"
+echo "START install-deps for $TRAVIS_OS_NAME"
 echo "------------------"
-echo "$TRAVIS_OS_NAME"
-echo "------------------"
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
 brew install python
 brew link --overwrite python
 git clone https://github.com/OpenLightingProject/ola.git ola
@@ -56,17 +43,7 @@ make
 sudo make install
 cd ../
 sudo pip install pyinstaller
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
-echo ""
+pip install qdarkstyle
 echo '-----------------'
-echo "END install-deps"
+echo "END install-deps for $TRAVIS_OS_NAME"
 echo "------------------"
-echo ""
-echo ""
