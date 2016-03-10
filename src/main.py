@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
             self.devices.setText('Universe')
             self.universe.setVisible(False)
             self.settings.setVisible(True)
-            self.settings.display_ports(self.universe_selected.id)
+            self.settings.display_ports(self.universe_selected)
         else:
             self.devices.setText('Settings')
             self.universe.setVisible(True)
