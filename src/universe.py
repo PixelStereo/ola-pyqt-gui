@@ -218,6 +218,7 @@ class Universe(QGroupBox):
         """
         self.id_label = QLabel('Universe ID')
         self.id = QSpinBox()
+        self.id.setReadOnly(True)
         self.name_label = QLabel('Name')
         self.name = QLineEdit()
         self.name.textEdited.connect(self.edit_name)
