@@ -104,6 +104,7 @@ class MainWindow(QMainWindow):
 
     def create_settings(self):
         self.settings = PatchPanel(self)
+        self.ola.devicesList.connect(self.settings.devices_model.layoutChanged.emit)
         self.settings.setVisible(False)
 
     def create_universe(self):

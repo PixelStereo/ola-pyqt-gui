@@ -56,6 +56,8 @@ class OLA(QThread):
     universeChanged = pyqtSignal()
     # signal that there is a new universes_list to display
     universesList = pyqtSignal()
+    # signal that there is a new list of devices to display
+    devicesList = pyqtSignal()
     def __init__(self):
         QThread.__init__(self)
         self.server = None
