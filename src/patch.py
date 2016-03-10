@@ -59,6 +59,9 @@ class PortList(QAbstractListModel):
         return the port object for a given row
         """   
         return  self.ports[row]
+
+    def flags(self, index):
+        return (Qt.ItemIsUserCheckable|Qt.ItemIsEnabled)
         
     def data(self, index, role=Qt.DisplayRole):
         """
