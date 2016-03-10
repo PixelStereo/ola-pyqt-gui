@@ -17,8 +17,9 @@ debug = 1
 
 class DeviceList(QAbstractListModel):
     """Model for a port list"""
-    def __init__(self,):
+    def __init__(self, parent):
         super(DeviceList, self).__init__()
+        self.parent = parent
         self.devices = []
 
     def rowCount(self, index):
@@ -47,8 +48,10 @@ class DeviceList(QAbstractListModel):
 
 class PortList(QAbstractListModel):
     """Model for a port list"""
-    def __init__(self,):
+    def __init__(self, parent, mode):
         super(PortList, self).__init__()
+        self.parent = parent
+        self.mode = mode
         self.ports = []
 
     def rowCount(self, index=None):
@@ -82,7 +85,41 @@ class PortList(QAbstractListModel):
                     value = 'Port ' + str(port.id) + rdm
                 return QVariant(value)
             elif role == Qt.CheckStateRole:
-                return Qt.CheckState
+                # check if this port is patched to the selected universe
+                check = Qt.Unchecked
+                # for input ports
+                if self.mode == 'input_mode':
+                    # check if there is at least one input port patched
+                    if len(self.parent.universe.input_ports) > 0:
+                        # check if this port is already patched
+                        if port in self.parent.universe.input_ports:
+                            # if yes, set the check on
+                            check = Qt.Checked
+                # for output ports
+                if self.mode == 'output_mode':
+                    # check if there is at least one output port patched
+                    if len(self.parent.universe.output_ports) > 0:
+                        # check if this port is already patched
+                        if port in self.parent.universe.output_ports:
+                            # if yes, set the check on
+                            check = Qt.Checked
+                return QVariant(check)
+            else:
+                return QVariant()
+        else:
+            return QVariant()
+
+    def setData(self, index, state, role=Qt.DisplayRole):
+        """
+        set the checkbox dor a port which enable it for the current universe
+        """
+        if index.isValid() and index.row() >= 0 and index.row() < self.rowCount():
+            row = index.row()
+            port = self.ports[row]
+            if role == Qt.CheckStateRole:
+                value = randrange(0,3)
+                print value
+                return value
             else:
                 return QVariant()
         else:
@@ -97,13 +134,15 @@ class PatchPanel(QGroupBox):
 
         self.parent = parent
 
+        self.universe = None
+
         parent.vbox.addWidget(self)
         
         grid = QGridLayout()
-        self.inputs_model = PortList()
-        self.outputs_model = PortList()
+        self.inputs_model = PortList(self, 'input_mode')
+        self.outputs_model = PortList(self, 'output_mode')
         self.devices = QListView()
-        self.devices_model = DeviceList()
+        self.devices_model = DeviceList(self)
         self.devices.setModel(self.devices_model)
         self.inputs = QListView()
         self.inputs.setModel(self.inputs_model)
@@ -116,8 +155,6 @@ class PatchPanel(QGroupBox):
 
         # Universe Selected Change
         self.devices.selectionModel().selectionChanged.connect(self.device_selection_changed)
-        self.inputs.selectionModel().selectionChanged.connect(self.port_selection_changed)
-        self.outputs.selectionModel().selectionChanged.connect(self.port_selection_changed)
 
         devices_label = QLabel('Devices')
         grid.addWidget(devices_label, 0, 0, 1, 1)
@@ -134,6 +171,9 @@ class PatchPanel(QGroupBox):
 
     def display_ports(self, universe=None):
         """display ports"""
+        self.universe = universe
+        if universe:
+            universe = universe.id
         self.ola.client.GetCandidatePorts(self.GetCandidatePortsCallback, universe)
 
     def GetCandidatePortsCallback(self, status, devices):
@@ -147,21 +187,24 @@ class PatchPanel(QGroupBox):
             for device in devices:
                 self.devices_model.devices.append(device)
                 self.devices_model.layoutChanged.emit()
-            print self.devices_model.devices
 
     def device_selection_changed(self, device):
+        # reset the models of inputs and outputs
         self.inputs_model.ports = []
         self.outputs_model.ports = []
+        # tell me which is the row selected
         row = device.indexes()[0].row()
+        # tell me which device is associated with this row
         device = device.indexes()[0].model().object(row)
+        # Append input ports of this device to the inputs list model
         for port in device.input_ports:
             self.inputs_model.ports.append(port)
+        # please refresh the inputs Qlistview
         self.inputs_model.layoutChanged.emit()
+        # Append output ports of this device to the outputs list model
         for port in device.output_ports:
             self.outputs_model.ports.append(port)
+        # please refresh the outputs Qlistview
         self.outputs_model.layoutChanged.emit()
-
-    def port_selection_changed(self, port):
-        row = port.indexes()[0].row()
-        port = port.indexes()[0].model().object(row)
-        print "port has been choosed !!!!! please patch it ----------", port
+        if debug:
+            print 'selected device :', device.name
