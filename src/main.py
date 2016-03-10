@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
         if not self.ola:
             # create a OLA client
             ola = OLA()
-            sleep(0.5)
+            sleep(0.1)
             if ola.client:
                 self.ola = ola
                 self.status("connected to OLA")
