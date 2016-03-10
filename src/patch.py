@@ -63,7 +63,7 @@ class PortList(QAbstractListModel):
         return  self.ports[row]
 
     def flags(self, index):
-        return (Qt.ItemIsUserCheckable|Qt.ItemIsEnabled)
+        return (Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsUserCheckable |Qt.ItemIsSelectable)
         
     def data(self, index, role=Qt.DisplayRole):
         """
@@ -94,7 +94,7 @@ class PortList(QAbstractListModel):
                 return QVariant(check)
         return QVariant()
 
-    def setData(self, index, state, role=Qt.DisplayRole):
+    def setData(self, index, value, role=Qt.DisplayRole):
         """
         set the checkbox dor a port which enable it for the current universe
         """
@@ -107,14 +107,12 @@ class PortList(QAbstractListModel):
                     is_output = True
                 else:
                     is_output = False
-                if state == 0:
+                if value == Qt.Unchecked:
                     action = OlaClient.UNPATCH
-                elif state == 2:
+                if value == Qt.Checked:
                     action = OlaClient.PATCH
                 universe = self.parent.parent.universe_selected
                 result = self.parent.parent.ola.client.PatchPort(device, port.id, is_output, action, universe.id)
-                self.parent.display_ports()
-                self.layoutChanged.emit()
                 self.dataChanged.emit(index, index)
                 self.layoutChanged.emit()
                 self.parent.display_ports()
