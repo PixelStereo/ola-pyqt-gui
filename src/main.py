@@ -22,7 +22,7 @@ from universe import Universe
 from universe import UniversesModel
 from patch import PatchPanel
 # stylesheet
-#import qdarkstyle
+import qdarkstyle
 
 debug = 1
 
@@ -96,6 +96,7 @@ class MainWindow(QMainWindow):
         self.devices.setCheckable(True)
         self.devices.toggled.connect(self.switch_view)
         self.devices.setEnabled(False)
+        mytoolbar.addSeparator()
         mytoolbar.addWidget(self.devices)
         mytoolbar.setMovable(False)
         mytoolbar.setFixedWidth(110)
@@ -111,7 +112,7 @@ class MainWindow(QMainWindow):
         """
         create a new universe
         """
-        print 'TODO : create a new universe'
+        print 'TODO : to create a new universe, set an ID and then patch ports'
 
     def create_ola(self):
         """
@@ -201,7 +202,7 @@ if __name__ == "__main__":
     root = QFileInfo(__file__).absolutePath()
     path = root+'/icon/icon.png'
     app.setWindowIcon(QIcon(path))
-    #app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     # create the Main Window and display it
     window = MainWindow()
     sys.exit(app.exec_())
