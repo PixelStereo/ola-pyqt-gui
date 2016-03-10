@@ -30,6 +30,9 @@ class OlaServer(QThread):
         if debug:
             print 'try to launch OLA server'
 
+    def __del__(self):
+        self.wait()
+
     def run(self):
         """
         the running thread
@@ -68,7 +71,7 @@ class OLA(QThread):
         except:
             # OLA server does not work properly
             print 'OLA server not responding'
-        #sleep(1)
+        sleep(0.1)
         # start the thread
         if self.server:
             self.start()
