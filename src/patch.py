@@ -67,26 +67,22 @@ class PortList(QAbstractListModel):
         """
         return the name of the port
         """
-        if index.isValid():
+        if index.isValid() and index.row() >= 0 and index.row() < self.rowCount():
             row = index.row()
             port = self.ports[row]
             if role == Qt.DisplayRole:
-                try:
-                    rdm = port.supports_rdm
-                    if rdm:
-                        rdm = ' - RDM support'
-                    else:
-                        rdm = ''
-                    if port.description != "":
-                        value = 'Port ' + str(port.id) + ' - ' + port.description + rdm
-                    else:
-                        value = 'Port ' + str(port.id) + rdm
-                    return QVariant(value)
-                except IndexError:
-                    if debug:
-                        # these cells does not exists
-                        print(row, 'is out of port list')
-                        return QVariant()
+                rdm = port.supports_rdm
+                if rdm:
+                    rdm = ' - RDM support'
+                else:
+                    rdm = ''
+                if port.description != "":
+                    value = 'Port ' + str(port.id) + ' - ' + port.description + rdm
+                else:
+                    value = 'Port ' + str(port.id) + rdm
+                return QVariant(value)
+            elif role == Qt.CheckStateRole:
+                return Qt.CheckState
             else:
                 return QVariant()
         else:
