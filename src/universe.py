@@ -208,6 +208,7 @@ class Universe(QGroupBox):
         self.create_tableview()
         # Add the previous UI stuffs to a layout
         grid = self.create_layout()
+        self.grid = grid
         self.setLayout(grid)
         parent.vbox.addWidget(self)
         self.parent = parent
@@ -294,7 +295,7 @@ class Universe(QGroupBox):
         grid.addWidget(self.merge_mode_htp, 0, 3, 1, 1)
         grid.addWidget(self.merge_mode_ltp_label, 0, 4, 1, 1)
         grid.addWidget(self.merge_mode_ltp, 0, 5, 1, 1)
-        grid.addWidget(self.view,2, 0, 18, 10)
+        grid.addWidget(self.view,2, 0, 18, 12)
         return grid
 
     def selection_changed(self, universe):

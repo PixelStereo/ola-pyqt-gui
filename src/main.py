@@ -69,12 +69,12 @@ class MainWindow(QMainWindow):
         """
     	if view:
             self.devices.setText('Universe')
-            self.universe.setVisible(False)
+            self.universe.view.setVisible(False)
             self.settings.setVisible(True)
             self.settings.display_ports(self.universe_selected)
         else:
             self.devices.setText('Settings')
-            self.universe.setVisible(True)
+            self.universe.view.setVisible(True)
             self.settings.setVisible(False)
 
     def status(self, message, timeout=2000):
@@ -105,6 +105,7 @@ class MainWindow(QMainWindow):
 
     def create_settings(self):
         self.settings = PatchPanel(self)
+        self.universe.grid.addWidget(self.settings,2, 0, 18, 10)
         self.ola.devicesList.connect(self.settings.devices_model.layoutChanged.emit)
         self.settings.setVisible(False)
 

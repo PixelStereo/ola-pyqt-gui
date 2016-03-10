@@ -131,8 +131,6 @@ class PatchPanel(QGroupBox):
         self.device_selected = None
 
         self.universe = None
-
-        parent.vbox.addWidget(self)
         
         grid = QGridLayout()
         self.inputs_model = PortList(self, 'input_mode')
