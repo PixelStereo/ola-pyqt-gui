@@ -17,13 +17,9 @@ Windows users will only have access to a [restricted numbers of protocols](https
 * Embed an independant OLA in the app
 * Tests with full code coverage    
 
-###Version 0.2
+###Ideas for the future    
 * Create an interface to send DMX (only if universe have no input)  
-
-###Version 0.3
 * Implement RDM discovery / patch    
-
-###Version 0.4
 * Create an editor for ola_trigger
 
 ##Credits
