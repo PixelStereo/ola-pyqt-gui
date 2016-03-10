@@ -51,7 +51,7 @@ class PortList(QAbstractListModel):
         super(PortList, self).__init__()
         self.ports = []
 
-    def rowCount(self, index):
+    def rowCount(self, index=None):
         return len(self.ports)
 
     def object(self, row):
