@@ -5,7 +5,6 @@ Patch Window used to display available devices
 Select a device will allow you to patch its port(s)
 """
 import sys
-from time import sleep
 # import from PyQt5 libs
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QVariant, QModelIndex, QFileInfo, QAbstractListModel
@@ -200,11 +199,9 @@ class PatchPanel(QGroupBox):
         row = device.indexes()[0].row()
         # tell me which device is associated with this row
         device = device.indexes()[0].model().object(row)
-        print '--------reset--------', device
         # Append input ports of this device to the inputs list model
         for port in device.input_ports:
             self.inputs_model.ports.append(port)
-            print '--------rrrrr--------', port.id, port.universe
         # please refresh the inputs Qlistview
         self.inputs_model.layoutChanged.emit()
         # Append output ports of this device to the outputs list model
