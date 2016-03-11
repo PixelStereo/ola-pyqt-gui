@@ -61,6 +61,10 @@ class OLA(QThread):
     universesList = pyqtSignal()
     # signal that there is a new list of devices to display
     devicesList = pyqtSignal()
+    # signal that there is a new list of inputs portsto display
+    inPortsList = pyqtSignal()
+    # signal that there is a new list of inputs portsto display
+    outPortsList = pyqtSignal()
     def __init__(self):
         QThread.__init__(self)
         self.server = None

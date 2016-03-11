@@ -105,6 +105,8 @@ class MainWindow(QMainWindow):
         self.settings = PatchPanel(self)
         self.universe.grid.addWidget(self.settings,2, 0, 18, 10)
         self.ola.devicesList.connect(self.settings.devices_model.layoutChanged.emit)
+        self.ola.inPortsList.connect(self.settings.inputs_model.layoutChanged.emit)
+        self.ola.outPortsList.connect(self.settings.outputs_model.layoutChanged.emit)
         self.settings.setVisible(False)
 
     def create_universe(self):

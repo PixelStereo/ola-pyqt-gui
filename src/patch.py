@@ -113,7 +113,7 @@ class PortList(QAbstractListModel):
                     action = OlaClient.PATCH
                 universe = self.parent.parent.universe_selected
                 result = self.parent.parent.ola.client.PatchPort(device, port.id, is_output, action, universe.id)
-                self.dataChanged.emit(index, index)
+                self.dataChanged.emit(index, index, [Qt.CheckStateRole, Qt.DisplayRole])
                 self.layoutChanged.emit()
                 self.parent.display_ports()
                 return result
@@ -183,30 +183,36 @@ class PatchPanel(QGroupBox):
             for device in devices:
                 self.devices_model.devices.append(device)
         self.parent.ola.devicesList.emit()
+        self.refresh_ports()
         # if there was a selection before, restore it
         #if self.device_selected:
             #self.devices.setSelection(self.device_selected)
 
+    def refresh_ports(self):
+        device = self.device_selected
+        print device
+        if device:
+            # reset the models of inputs and outputs
+            self.inputs_model.ports = []
+            self.outputs_model.ports = []
+            print device.input_ports
+            # Append input ports of this device to the inputs list model
+            for port in device.input_ports:
+                self.inputs_model.ports.append(port)
+            # Append output ports of this device to the outputs list model
+            for port in device.output_ports:
+                self.outputs_model.ports.append(port)
+            # please refresh Qlistview
+            self.parent.ola.inPortsList.emit()
+            self.parent.ola.outPortsList.emit()
+
     def device_selection_changed(self, device):
-        # reset the models of inputs and outputs
-        self.inputs_model.ports = []
-        self.outputs_model.ports = []
         # tell me which is the row selected
         row = device.indexes()[0].row()
         # tell me which device is associated with this row
         device = device.indexes()[0].model().object(row)
-        # Append input ports of this device to the inputs list model
-        for port in device.input_ports:
-            self.inputs_model.ports.append(port)
-        # please refresh the inputs Qlistview
-        self.inputs_model.layoutChanged.emit()
-        # Append output ports of this device to the outputs list model
-        for port in device.output_ports:
-            self.outputs_model.ports.append(port)
-        # please refresh Qlistview
-        self.inputs_model.layoutChanged.emit()
-        self.inputs_model.layoutChanged.emit()
-        self.outputs_model.layoutChanged.emit()
         self.device_selected = device
+        # refresh ports list
+        self.refresh_ports()
         if debug:
             print 'selected device :', device.name
