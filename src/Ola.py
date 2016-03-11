@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-This module implements a OLA class that launch OLA server 
+This module implements a OLA class that launch OLA server
 and runs a dedicated Client for this server
 """
 
@@ -111,3 +111,4 @@ class OLA(QThread):
             self.server.stop()
             if debug:
                 print 'OLA server is stopped'
+        return True

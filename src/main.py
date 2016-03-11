@@ -113,7 +113,16 @@ class MainWindow(QMainWindow):
         """
         create a new universe
         """
-        print 'TODO : to create a new universe, set an ID and then patch ports'
+        if self.universe:
+            if debug:
+                print 'make universe.id editable'
+            self.universe.id.setReadOnly(False)
+        else:
+            self.universe_mv_create()
+            if debug:
+                print 'make universe.id editable'
+            self.universe.id.setReadOnly(False)
+        self.devices.setChecked(True)
 
     def create_ola(self):
         """
@@ -122,21 +131,18 @@ class MainWindow(QMainWindow):
         """
         # create a OLA object (both server and client)
         ola = OLA()
-        sleep(0.1)
+        sleep(0.2)
         if ola.client:
             self.ola = ola
-            self.status("connected to OLA")
+            self.status("connected to OLA", 0)
             # create a button to add a new universe
             new_universe = QPushButton('new universe')
             new_universe.released.connect(self.create_universe)
             self.toolbar.addWidget(new_universe)
-            refresh_universes = QPushButton('refresh list')
-            self.toolbar.addWidget(refresh_universes)
             # create the panel to display universe list
-            self.create_universe_panel()
+            self.create_universeList_panel()
             # please update universes list
             self.universes_refresh()
-            refresh_universes.released.connect(self.universes_refresh)
         else:
             self.status("can't connect to OLA. Is it running?", 0)
             # quit the app if no OLA server
@@ -151,7 +157,7 @@ class MainWindow(QMainWindow):
             print 'refresh universe list'
         self.ola.client.FetchUniverses(self.list_model.update_universes_list)
 
-    def create_universe_panel(self):
+    def create_universeList_panel(self):
         """
         create the panel with a qlistview to display universes list
         Called only once on MainWindow creation
@@ -176,23 +182,39 @@ class MainWindow(QMainWindow):
         universe = universe.indexes()[0].model().object(row)
         if not self.universe:
             # there is no universe interface created. Please do it
-            # MAYBE WE CAN DO THIS WHEN CREATING THE MAIN WINDOW?
-            self.universe = Universe(self)
-            self.create_settings()
-            self.devices.setEnabled(True)
+            self.universe_mv_create()
         # Fill in the universe_selected variable
         self.universe_selected = universe
         if debug:
             print 'selected universe :', universe
         self.universe.selection_changed(self.universe_selected)
 
+    def universe_mv_create(self):
+        """
+        Create model and view for a universe
+        MAYBE WE CAN DO THIS WHEN CREATING THE MAIN WINDOW?
+        """
+        if debug:
+            print 'create model and view for universe'
+        # create the universe model
+        self.universe = Universe(self)
+        # create the patch model and view
+        self.create_settings()
+        # enable button to switch to the patch view
+        self.devices.setEnabled(True)
+
     def closeEvent(self, event):
         """
-        Called when app is about to closed
+        Call when the app is about to be closed
         """
         # why this is happenning twice?
         if self.ola:
-            self.ola.stop()
+            if self.ola.stop():
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.accept()
 
 
 if __name__ == "__main__":

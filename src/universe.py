@@ -31,7 +31,7 @@ class UniversesModel(QAbstractListModel):
     def object(self, row):
         """
         return the universe object for a given row
-        """   
+        """
         return  self.universes_list[row]
 
     def data(self, index, role=Qt.DisplayRole):
@@ -220,6 +220,7 @@ class Universe(QGroupBox):
         self.id_label = QLabel('Universe ID')
         self.id = QSpinBox()
         self.id.setReadOnly(True)
+        self.id.valueChanged.connect(self.edit_id)
         self.name_label = QLabel('Name')
         self.name = QLineEdit()
         self.name.textEdited.connect(self.edit_name)
@@ -231,6 +232,13 @@ class Universe(QGroupBox):
         self.merge_mode_ltp = QRadioButton()
         self.merge_mode_ltp.toggled.connect(self.edit_merge_mode_ltp)
         self.merge_mode_htp.toggled.connect(self.edit_merge_mode_htp)
+
+    def edit_id(self, id):
+        """
+        Universe Id has been changed.
+        It happens ONLY when creating a new universe
+        """
+        self.id.setReadOnly(True)
 
     def edit_name(self, name):
         if self.universe_selected:
@@ -275,7 +283,7 @@ class Universe(QGroupBox):
         self.view.setVerticalHeader(v_headers)
         h_headers = QHeaderView(Qt.Horizontal)
         self.view.setHorizontalHeader(h_headers)
-        if debug : 
+        if debug :
             print 'how many lines : ', v_headers.count()
             print 'how many columns : ', h_headers.count()
         # set up rows and columns

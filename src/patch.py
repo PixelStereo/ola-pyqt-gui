@@ -29,9 +29,9 @@ class DeviceList(QAbstractListModel):
     def object(self, row):
         """
         return the port object for a given row
-        """   
+        """
         return  self.devices[row]
-        
+
     def data(self, index, role=Qt.DisplayRole):
         """
         return the name of the port
@@ -59,12 +59,12 @@ class PortList(QAbstractListModel):
     def object(self, row):
         """
         return the port object for a given row
-        """   
+        """
         return  self.ports[row]
 
     def flags(self, index):
         return (Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsUserCheckable |Qt.ItemIsSelectable)
-        
+
     def data(self, index, role=Qt.DisplayRole):
         """
         return the name of the port
@@ -123,7 +123,7 @@ class PatchPanel(QGroupBox):
     """Group of widget to patch an universe"""
     def __init__(self, parent):
         super(PatchPanel, self).__init__()
-        
+
         self.ola = parent.ola
 
         self.parent = parent
@@ -131,7 +131,7 @@ class PatchPanel(QGroupBox):
         self.device_selected = None
 
         self.universe = None
-        
+
         grid = QGridLayout()
         self.inputs_model = PortList(self, 'input_mode')
         self.outputs_model = PortList(self, 'output_mode')
@@ -167,12 +167,31 @@ class PatchPanel(QGroupBox):
         if universe:
             universe=universe.id
         else:
-            universe = self.parent.universe_selected.id
-        self.ola.client.FetchDevices(self.GetDecvicesCallback, universe)
+            if self.parent.universe_selected:
+                universe = self.parent.universe_selected.id
+            else:
+                result = self.ola.client.GetCandidatePorts(self.GetCandidatePortsCallback, None)
+                return result
+        result = self.ola.client.FetchDevices(self.GetDecvicesCallback, universe)
+        return result
+
+    def GetCandidatePortsCallback(self, status, devices):
+        """
+        Called for a new universe
+        """
+        if status.Succeeded():
+            # clear the list of devices
+            self.devices_model.devices = []
+            if debug:
+                print 'found', len(devices), 'devices'
+            for device in devices:
+                self.devices_model.devices.append(device)
+        self.parent.ola.devicesList.emit()
+        self.refresh_ports()
 
     def GetDecvicesCallback(self, status, devices):
         """
-        Function that fill-in universe menus with candidate devices/ports
+        Fill-in universe menus with candidate devices/ports
         We need to make menus checkable to be able to patch ports
         """
         if status.Succeeded():
