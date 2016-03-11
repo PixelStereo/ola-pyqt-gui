@@ -121,7 +121,6 @@ class MainWindow(QMainWindow):
         # create a OLA object (both server and client)
         ola = OLA()
         sleep(0.1)
-        print ')))))', ola.server, ola.client
         if ola.client:
             self.ola = ola
             self.status("connected to OLA")
