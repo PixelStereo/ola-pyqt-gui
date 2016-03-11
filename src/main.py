@@ -47,8 +47,6 @@ class MainWindow(QMainWindow):
         self.setFixedWidth(1086)
         self.setFixedHeight(459)
         self.move(0, 0)
-        # initialize ola to be sure it exists
-        self.ola = None
         if debug:
             print 'main window created'
             print 'make a ola_connection request'
@@ -117,32 +115,31 @@ class MainWindow(QMainWindow):
 
     def create_ola(self):
         """
-        create the ola client. Called when app is launched.
-        If olad is not running at this time,
+        create the ola object (both server and client)
+        Called when app is launched.
         """
-        # check if there is not already a OLA client
-        if not self.ola:
-            # create a OLA client
-            ola = OLA()
-            sleep(0.1)
-            if ola.client:
-                self.ola = ola
-                self.status("connected to OLA")
-                # create a button to add a new universe
-                new_universe = QPushButton('new universe')
-                new_universe.released.connect(self.create_universe)
-                self.toolbar.addWidget(new_universe)
-                refresh_universes = QPushButton('refresh list')
-                self.toolbar.addWidget(refresh_universes)
-                # create the panel to display universe list
-                self.create_universe_panel()
-                # please update universes list
-                self.universes_refresh()
-                refresh_universes.released.connect(self.universes_refresh)
-            else:
-                self.status("can't connect to OLA. Is it running?", 0)
-                # quit the app if no OLA server
-                quit()
+        # create a OLA object (both server and client)
+        ola = OLA()
+        sleep(0.1)
+        print ')))))', ola.server, ola.client
+        if ola.client:
+            self.ola = ola
+            self.status("connected to OLA")
+            # create a button to add a new universe
+            new_universe = QPushButton('new universe')
+            new_universe.released.connect(self.create_universe)
+            self.toolbar.addWidget(new_universe)
+            refresh_universes = QPushButton('refresh list')
+            self.toolbar.addWidget(refresh_universes)
+            # create the panel to display universe list
+            self.create_universe_panel()
+            # please update universes list
+            self.universes_refresh()
+            refresh_universes.released.connect(self.universes_refresh)
+        else:
+            self.status("can't connect to OLA. Is it running?", 0)
+            # quit the app if no OLA server
+            quit()
 
     def universes_refresh(self):
         """
