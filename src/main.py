@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
 		# set up the window
         self.setWindowTitle("OLA GUI")
         self.setFixedWidth(1086)
-        self.setFixedHeight(459)
+        self.setFixedHeight(480)
         self.move(0, 0)
         if debug:
             print 'main window created'
