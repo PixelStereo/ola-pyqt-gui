@@ -13,9 +13,10 @@ import textwrap
 from time import sleep
 from random import randrange
 # import from PyQt5 libs
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtCore import Qt, QVariant, QModelIndex, QFileInfo
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QCheckBox, QMainWindow, QListView, QPushButton, QToolBar, QFrame
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QCheckBox, QMainWindow, \
+                            QAction, QListView, QPushButton, QToolBar, QFrame
 # import from current module
 from Ola import OLA
 from universe import Universe
@@ -40,6 +41,8 @@ class MainWindow(QMainWindow):
         frame = QFrame()
         self.vbox = QVBoxLayout(frame)
         self.setCentralWidget(frame)
+        # create actions
+        self.create_actions()
         # create a ToolBar
         self.create_toolBar()
 		# set up the window
@@ -59,22 +62,6 @@ class MainWindow(QMainWindow):
         # Show the current main window
         self.show()
 
-    def switch_view(self, view):
-        """
-        switch the view between universe view or devices view
-        • universe view displays universe attributes (name, id and merge_mode) and DMX values
-        • devices view displays devices attached to the universes (input and ouput ports)
-        """
-    	if view:
-            self.devices.setText('Universe')
-            self.universe.view.setVisible(False)
-            self.settings.setVisible(True)
-            self.settings.display_ports(self.universe_selected)
-        else:
-            self.devices.setText('Settings')
-            self.universe.view.setVisible(True)
-            self.settings.setVisible(False)
-
     def status(self, message, timeout=2000):
         """
         Display a message on the Status bar
@@ -83,23 +70,67 @@ class MainWindow(QMainWindow):
             timeout = 999999999
         self.statusBar().showMessage(message, timeout)
 
+    def create_actions(self):
+        self.view_dmxList = QAction("Monitor", self,
+                              shortcut=QKeySequence.New, statusTip="Monitor DMX values",
+                              triggered=self.switch2dmxList)
+        self.view_patch = QAction("Patch", self,
+                              shortcut=QKeySequence.New, statusTip="Patch in/out ports",
+                              triggered=self.switch2patch)
+        self.new_universe = QAction("New Universe", self,
+                              shortcut=QKeySequence.New, statusTip="Create a new universe",
+                              triggered=self.create_universe)
+        self.record_universe = QAction("RegisterUniverse", self,
+                              shortcut=QKeySequence.New, statusTip="Register the new universe",
+                              triggered=self.register_universe)
+
     def create_toolBar(self):
         """
         create the toolbar of the app
         it contains debug toggle, ola_connection toggle and universes_list
         """
         mytoolbar = QToolBar()
-        # temporary debug UI toggle
+        # DMX values view
+        mytoolbar.addAction(self.view_dmxList)
+        self.view_dmxList.setVisible(False)
+        # patch ports view
+        mytoolbar.addAction(self.view_patch)
+        self.view_patch.setVisible(True)
+        self.view_patch.setEnabled(False)
+        # new universe action
+        mytoolbar.addAction(self.new_universe)
+        # register universe action
+        mytoolbar.addAction(self.record_universe)
+        self.record_universe.setVisible(False)
+        """
         self.devices = QPushButton('Devices')
         self.devices.setCheckable(True)
         self.devices.toggled.connect(self.switch_view)
         self.devices.setEnabled(False)
+        self.record_universe = QPushButton('Save this new universe')
+        self.record_universe.hide()
+        self.record_universe.released.connect(self.register_universe)
+        # create a button to add a new universe
+        self.new_universe = QPushButton('new universe')
+        self.new_universe.released.connect(self.create_universe)
         mytoolbar.addSeparator()
         mytoolbar.addWidget(self.devices)
+        mytoolbar.addWidget(self.new_universe)
+        mytoolbar.addWidget(self.record_universe)"""
         mytoolbar.setMovable(False)
         mytoolbar.setFixedWidth(110)
         self.addToolBar(Qt.LeftToolBarArea, mytoolbar)
         self.toolbar = mytoolbar
+
+    def register_universe(self):
+        """
+        Record a new universe (button pressed)
+        """
+        if debug:
+            print 'universe recorded'
+        self.universe.id.setReadOnly(True)
+        self.record_universe.setVisible(False)
+        self.new_universe.setVisible(True)
 
     def create_settings(self):
         self.settings = PatchPanel(self)
@@ -109,20 +140,44 @@ class MainWindow(QMainWindow):
         self.ola.outPortsList.connect(self.settings.outputs_model.layoutChanged.emit)
         self.settings.setVisible(False)
 
+    def switch2dmxList(self):
+        """
+        switch the view between universe view or devices view
+        • universe view displays universe attributes (name, id and merge_mode) and DMX values
+        • devices view displays devices attached to the universes (input and ouput ports)
+        """
+        self.universe.view.setVisible(True)
+        self.settings.setVisible(False)
+        self.view_patch.setVisible(True)
+        self.view_dmxList.setVisible(False)
+
+    def switch2patch(self):
+        """
+        switch the view between universe view or devices view
+        • universe view displays universe attributes (name, id and merge_mode) and DMX values
+        • devices view displays devices attached to the universes (input and ouput ports)
+        """
+        self.universe.view.setVisible(False)
+        self.settings.setVisible(True)
+        self.settings.display_ports(self.universe_selected)
+        self.view_dmxList.setVisible(True)
+        self.view_patch.setVisible(False)
+
     def create_universe(self):
         """
         create a new universe
         """
-        if self.universe:
-            if debug:
-                print 'make universe.id editable'
-            self.universe.id.setReadOnly(False)
-        else:
+        if not self.universe:
             self.universe_mv_create()
             if debug:
-                print 'make universe.id editable'
-            self.universe.id.setReadOnly(False)
-        self.devices.setChecked(True)
+                print 'create universe model and view'
+        if debug:
+            print 'make universe.id editable'
+        self.universe.id.setReadOnly(False)
+        self.new_universe.setVisible(False)
+        self.record_universe.setVisible(True)
+        # make patch panel active
+        #self.devices.setChecked(True)
 
     def create_ola(self):
         """
@@ -135,10 +190,6 @@ class MainWindow(QMainWindow):
         if ola.client:
             self.ola = ola
             self.status("connected to OLA", 0)
-            # create a button to add a new universe
-            new_universe = QPushButton('new universe')
-            new_universe.released.connect(self.create_universe)
-            self.toolbar.addWidget(new_universe)
             # create the panel to display universe list
             self.create_universeList_panel()
             # please update universes list
@@ -192,7 +243,6 @@ class MainWindow(QMainWindow):
     def universe_mv_create(self):
         """
         Create model and view for a universe
-        MAYBE WE CAN DO THIS WHEN CREATING THE MAIN WINDOW?
         """
         if debug:
             print 'create model and view for universe'
@@ -200,8 +250,8 @@ class MainWindow(QMainWindow):
         self.universe = Universe(self)
         # create the patch model and view
         self.create_settings()
-        # enable button to switch to the patch view
-        self.devices.setEnabled(True)
+        self.view_patch.setVisible(True)
+        self.view_patch.setEnabled(True)
 
     def closeEvent(self, event):
         """

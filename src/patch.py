@@ -163,16 +163,15 @@ class PatchPanel(QGroupBox):
         self.setLayout(grid)
 
     def display_ports(self, universe=None):
-        """display ports"""
-        if universe:
-            universe=universe.id
-        else:
-            if self.parent.universe_selected:
-                universe = self.parent.universe_selected.id
-            else:
-                result = self.ola.client.GetCandidatePorts(self.GetCandidatePortsCallback, None)
-                return result
-        result = self.ola.client.FetchDevices(self.GetDecvicesCallback, universe)
+        """
+        Request a list of Devices
+        if universe == None, a list of None-Already-Patched ports is send
+
+        """
+        if universe is None:
+            result = self.ola.client.GetCandidatePorts(self.GetCandidatePortsCallback, None)
+            return result
+        result = self.ola.client.FetchDevices(self.GetDevicesCallback, 0)
         return result
 
     def GetCandidatePortsCallback(self, status, devices):
@@ -183,13 +182,13 @@ class PatchPanel(QGroupBox):
             # clear the list of devices
             self.devices_model.devices = []
             if debug:
-                print 'found', len(devices), 'devices'
+                print 'found', len(devices), 'candidate devices'
             for device in devices:
                 self.devices_model.devices.append(device)
         self.parent.ola.devicesList.emit()
         self.refresh_ports()
 
-    def GetDecvicesCallback(self, status, devices):
+    def GetDevicesCallback(self, status, devices):
         """
         Fill-in universe menus with candidate devices/ports
         We need to make menus checkable to be able to patch ports
@@ -197,10 +196,18 @@ class PatchPanel(QGroupBox):
         if status.Succeeded():
             # clear the list of devices
             self.devices_model.devices = []
-            if debug:
-                print 'found', len(devices), 'devices'
             for device in devices:
-                self.devices_model.devices.append(device)
+                if device.input_ports == []:
+                    # there is no input ports
+                    if device.output_ports == []:
+                        # no in + no out = no device
+                        pass
+                    else:
+                        self.devices_model.devices.append(device)
+                else:
+                    self.devices_model.devices.append(device)
+            if debug:
+                print 'found', len(self.devices_model.devices), 'devices'
         self.parent.ola.devicesList.emit()
         self.refresh_ports()
         # if there was a selection before, restore it
@@ -209,12 +216,10 @@ class PatchPanel(QGroupBox):
 
     def refresh_ports(self):
         device = self.device_selected
-        print device
         if device:
             # reset the models of inputs and outputs
             self.inputs_model.ports = []
             self.outputs_model.ports = []
-            print device.input_ports
             # Append input ports of this device to the inputs list model
             for port in device.input_ports:
                 self.inputs_model.ports.append(port)

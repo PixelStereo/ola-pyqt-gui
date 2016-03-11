@@ -217,11 +217,9 @@ class Universe(QGroupBox):
         """
         create attributes widget for the universe
         """
-        self.id_label = QLabel('Universe ID')
         self.id = QSpinBox()
         self.id.setReadOnly(True)
-        self.id.valueChanged.connect(self.edit_id)
-        self.name_label = QLabel('Name')
+        self.id.setRange(0, 65536)
         self.name = QLineEdit()
         self.name.textEdited.connect(self.edit_name)
         self.name.setFixedWidth(200)
@@ -232,13 +230,6 @@ class Universe(QGroupBox):
         self.merge_mode_ltp = QRadioButton()
         self.merge_mode_ltp.toggled.connect(self.edit_merge_mode_ltp)
         self.merge_mode_htp.toggled.connect(self.edit_merge_mode_htp)
-
-    def edit_id(self, id):
-        """
-        Universe Id has been changed.
-        It happens ONLY when creating a new universe
-        """
-        self.id.setReadOnly(True)
 
     def edit_name(self, name):
         if self.universe_selected:
