@@ -141,11 +141,11 @@ class PatchPanel(QGroupBox):
         self.inputs = QListView()
         self.inputs.setModel(self.inputs_model)
         self.inputs.setMinimumHeight(400)
-        self.inputs.setMinimumHeight(150)
+        self.inputs.setMinimumHeight(120)
         self.outputs = QListView()
         self.outputs.setModel(self.outputs_model)
         self.outputs.setMinimumHeight(400)
-        self.outputs.setMinimumHeight(150)
+        self.outputs.setMinimumHeight(120)
 
         # Universe Selected Change
         self.devices.selectionModel().selectionChanged.connect(self.device_selection_changed)

@@ -283,6 +283,7 @@ class Universe(QGroupBox):
             self.view.setColumnWidth(col, 28)
         for row in range(self.model.rowCount()):
             self.view.setRowHeight(row, 20)
+        self.view.setMinimumHeight(350)
 
     def create_layout(self):
         """
