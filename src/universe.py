@@ -62,13 +62,13 @@ class UniversesModel(QAbstractListModel):
             self.universes_list = list(universes)
             if debug:
                 if len(universes) == 0:
-                    print 'no universe found'
+                    print('no universe found')
                 elif len(universes) == 1:
-                    print 'only one universe found'
+                    print('only one universe found')
                 elif len(universes) > 1:
-                    print len(universes), 'universes found'
+                    print(len(universes), 'universes found')
                 else:
-                    print len(universes), 'ERROR CODE 001'
+                    print(len(universes), 'ERROR CODE 001')
             self.parent.ola.universesList.emit()
 
 
@@ -80,7 +80,7 @@ class UniverseModel(QAbstractTableModel):
         super(UniverseModel, self).__init__(parent)
         # define the proportion of the table
         self.columns = 32
-        self.rows = (512/self.columns)
+        self.rows = (int(512/self.columns))
         if int(self.rows)*self.columns < 512:
             self.rows = self.rows + 1
         # initialize the list of 512 values
@@ -161,7 +161,7 @@ class UniverseModel(QAbstractTableModel):
         Update table model with new DMX frame
         """
         if debug:
-            print 'new frame received :', len(data), data
+            print('new frame received :', len(data), data)
         # if data: does not work because the data list can be empty when fetching DMX
         if data != None:
             for index,value in enumerate(data):
@@ -193,8 +193,8 @@ class UniverseModel(QAbstractTableModel):
         This must be outside the universe model, isn't it?
         """
         if debug:
-            print 'refresh universe', universe
-            print 'new frame received :', len(data), data
+            print('refresh universe', universe)
+            print('new frame received :', len(data), data)
         self.new_frame(data)
 
 
@@ -251,13 +251,13 @@ class Universe(QGroupBox):
     def edit_merge_mode_htp(self, state):
         if state:
             if debug:
-                print 'switch universe to HTP merge mode'
+                print('switch universe to HTP merge mode')
             self.edit_merge_mode(1)
 
     def edit_merge_mode_ltp(self, state):
         if state:
             if debug:
-                print 'switch universe to LTP merge mode'
+                print('switch universe to LTP merge mode')
             self.edit_merge_mode(2)
 
     def edit_merge_mode(self, merge_mode):
@@ -283,8 +283,8 @@ class Universe(QGroupBox):
         h_headers = QHeaderView(Qt.Horizontal)
         self.view.setHorizontalHeader(h_headers)
         if debug :
-            print 'how many lines : ', v_headers.count()
-            print 'how many columns : ', h_headers.count()
+            print('how many lines : ', v_headers.count())
+            print('how many columns : ', h_headers.count())
         # set up rows and columns
         for col in range(self.model.columnCount()):
             self.view.setColumnWidth(col, 28)
@@ -318,12 +318,12 @@ class Universe(QGroupBox):
                 if self.old:
                     # unregister the previous universe (self.old)
                     if debug:
-                        print 'disconnect universe :', self.old
+                        print('disconnect universe :', self.old)
                     self.ola.client.RegisterUniverse(self.old, self.ola.client.UNREGISTER, self.model.new_frame)
                 # register the selected universe (new)
                 # ask about universe values, in case no new frame is sent
                 if debug:
-                    print 'connect universe :', universe.id
+                    print('connect universe :', universe.id)
                 self.ola.client.RegisterUniverse(universe.id, self.ola.client.REGISTER, self.model.new_frame)
                 self.ola.universeChanged.connect(self.model.layoutChanged.emit)
                 self.ola.client.FetchDmx(universe.id, self.model.fetch_dmx)
@@ -333,7 +333,7 @@ class Universe(QGroupBox):
             else:
                 # ola wants to connect again to the universe it's already binding to
                 if debug:
-                    print 'universe already connected'
+                    print('universe already connected')
                 return False
         else:
             return False
@@ -351,5 +351,5 @@ class Universe(QGroupBox):
             self.merge_mode_htp.setChecked(False)
             self.merge_mode_ltp.setChecked(True)
         if debug:
-            print 'Input ports :', universe.input_ports
-            print 'Output ports :', universe.output_ports
+            print('Input ports :', universe.input_ports)
+            print('Output ports :', universe.output_ports)

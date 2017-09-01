@@ -28,7 +28,7 @@ class OlaServer(QThread):
         # start the thread
         self.start()
         if debug:
-            print 'try to launch OLA server'
+            print('try to launch OLA server')
 
     def __del__(self):
         self.wait()
@@ -42,7 +42,7 @@ class OlaServer(QThread):
             #self.the_process = subprocess.Popen("exec " + cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
             self.the_process = subprocess.Popen("exec " + cmd, shell=True)
         except:
-            print 'ola cannot be launched'
+            print('ola cannot be launched')
 
     def stop(self):
         """Stop the OLA server if it has been launch by this thread"""
@@ -74,13 +74,13 @@ class OLA(QThread):
             self.server = OlaServer()
         except:
             # OLA server does not work properly
-            print 'OLA server not responding'
+            print('OLA server not responding')
         sleep(0.1)
         # start the thread
         if self.server:
             self.start()
         else:
-            print 'no server is running, cannot start a client'
+            print('no server is running, cannot start a client')
 
     def __del__(self):
         self.wait()
@@ -93,11 +93,11 @@ class OLA(QThread):
             self.wrapper = ClientWrapper()
             self.client = self.wrapper.Client()
             if debug:
-                print 'connected to OLA server'
+                print('connected to OLA server')
             self.wrapper.Run()
         except OLADNotRunningException:
             if debug:
-                print 'cannot connect to OLA'
+                print('cannot connect to OLA')
 
     def stop(self):
         """
@@ -106,9 +106,9 @@ class OLA(QThread):
         if self.client:
             self.wrapper.Stop()
             if debug:
-                print 'OLA client is stopped'
+                print('OLA client is stopped')
         if self.server:
             self.server.stop()
             if debug:
-                print 'OLA server is stopped'
+                print('OLA server is stopped')
         return True
