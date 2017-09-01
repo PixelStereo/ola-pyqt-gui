@@ -22,11 +22,7 @@ from Ola import OLA
 from universe import Universe
 from universe import UniversesModel
 from patch import PatchPanel
-try:
-    # stylesheet
-    import qdarkstyle
-except:
-    pass
+
 
 debug = 1
 
@@ -276,10 +272,6 @@ if __name__ == "__main__":
     root = QFileInfo(__file__).absolutePath()
     path = root+'/icon/icon.png'
     app.setWindowIcon(QIcon(path))
-    try:
-        app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-    except:
-        pass
     # create the Main Window and display it
     window = MainWindow()
     sys.exit(app.exec_())
