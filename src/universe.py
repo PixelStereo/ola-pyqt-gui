@@ -156,13 +156,11 @@ class UniverseModel(QAbstractTableModel):
         else:
             return QVariant()
 
-
-    def new_frame(self, RequestStatus, universe, data):
+    def new_frame(self, data):
         """
-        receive the dmx_list when ola sends new data
+        Update table model with new DMX frame
         """
         if debug:
-            print 'refresh universe', universe
             print 'new frame received :', len(data), data
         # if data: does not work because the data list can be empty when fetching DMX
         if data != None:
@@ -188,6 +186,16 @@ class UniverseModel(QAbstractTableModel):
             # this is send only once for a dmx_list
             # This is where the update is send to the GUI
             self.parent.ola.universeChanged.emit()
+
+    def fetch_dmx(self, RequestStatus, universe, data):
+        """
+        receive the dmx_list when ola sends Fetch DMX
+        This must be outside the universe model, isn't it?
+        """
+        if debug:
+            print 'refresh universe', universe
+            print 'new frame received :', len(data), data
+        self.new_frame(data)
 
 
 class Universe(QGroupBox):
@@ -318,7 +326,7 @@ class Universe(QGroupBox):
                     print 'connect universe :', universe.id
                 self.ola.client.RegisterUniverse(universe.id, self.ola.client.REGISTER, self.model.new_frame)
                 self.ola.universeChanged.connect(self.model.layoutChanged.emit)
-                self.ola.client.FetchDmx(universe.id, self.model.new_frame)
+                self.ola.client.FetchDmx(universe.id, self.model.fetch_dmx)
                 self.display_attributes(universe)
                 self.old = universe.id
                 return True
