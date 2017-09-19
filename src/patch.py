@@ -182,7 +182,7 @@ class PatchPanel(QGroupBox):
             # clear the list of devices
             self.devices_model.devices = []
             if debug:
-                print 'found', len(devices), 'candidate devices'
+                print('found', len(devices), 'candidate devices')
             for device in devices:
                 self.devices_model.devices.append(device)
         self.parent.ola.devicesList.emit()
@@ -207,7 +207,7 @@ class PatchPanel(QGroupBox):
                 else:
                     self.devices_model.devices.append(device)
             if debug:
-                print 'found', len(self.devices_model.devices), 'devices'
+                print('found', len(self.devices_model.devices), 'devices')
         self.parent.ola.devicesList.emit()
         self.refresh_ports()
         # if there was a selection before, restore it
@@ -239,4 +239,4 @@ class PatchPanel(QGroupBox):
         # refresh ports list
         self.refresh_ports()
         if debug:
-            print 'selected device :', device.name
+            print('selected device :', device.name)

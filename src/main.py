@@ -22,8 +22,7 @@ from Ola import OLA
 from universe import Universe
 from universe import UniversesModel
 from patch import PatchPanel
-# stylesheet
-import qdarkstyle
+
 
 debug = 1
 
@@ -51,8 +50,8 @@ class MainWindow(QMainWindow):
         self.setFixedHeight(480)
         self.move(0, 0)
         if debug:
-            print 'main window created'
-            print 'make a ola_connection request'
+            print('main window created')
+            print('make a ola_connection request')
         # When creating the app, there is no universe selected
         self.universe_selected = None
         # display a message to say init is over
@@ -127,7 +126,7 @@ class MainWindow(QMainWindow):
         Record a new universe (button pressed)
         """
         if debug:
-            print 'universe recorded'
+            print('universe recorded')
         self.universe.id.setReadOnly(True)
         self.record_universe.setVisible(False)
         self.new_universe.setVisible(True)
@@ -170,9 +169,9 @@ class MainWindow(QMainWindow):
         if not self.universe:
             self.universe_mv_create()
             if debug:
-                print 'create universe model and view'
+                print('create universe model and view')
         if debug:
-            print 'make universe.id editable'
+            print('make universe.id editable')
         self.universe.id.setReadOnly(False)
         self.new_universe.setVisible(False)
         self.record_universe.setVisible(True)
@@ -205,7 +204,7 @@ class MainWindow(QMainWindow):
         This method is just a link between the button from the toolbar and the ola_client
         """
         if debug:
-            print 'refresh universe list'
+            print('refresh universe list')
         self.ola.client.FetchUniverses(self.list_model.update_universes_list)
 
     def create_universeList_panel(self):
@@ -237,7 +236,7 @@ class MainWindow(QMainWindow):
         # Fill in the universe_selected variable
         self.universe_selected = universe
         if debug:
-            print 'selected universe :', universe
+            print('selected universe :', universe)
         self.universe.selection_changed(self.universe_selected)
 
     def universe_mv_create(self):
@@ -245,7 +244,7 @@ class MainWindow(QMainWindow):
         Create model and view for a universe
         """
         if debug:
-            print 'create model and view for universe'
+            print('create model and view for universe')
         # create the universe model
         self.universe = Universe(self)
         # create the patch model and view
@@ -273,7 +272,6 @@ if __name__ == "__main__":
     root = QFileInfo(__file__).absolutePath()
     path = root+'/icon/icon.png'
     app.setWindowIcon(QIcon(path))
-    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     # create the Main Window and display it
     window = MainWindow()
     sys.exit(app.exec_())
